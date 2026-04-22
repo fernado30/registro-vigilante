@@ -30,14 +30,6 @@ function SearchIcon() {
   );
 }
 
-function getTodayValue() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = `${now.getMonth() + 1}`.padStart(2, "0");
-  const day = `${now.getDate()}`.padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function formatTime(value) {
   if (!value) return "--:--";
 
@@ -63,9 +55,12 @@ export default function Historial() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(getTodayValue());
+  const [error, setError] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("todos");
+
+  const selectedDateLabel = selectedDate || "Todas las fechas";
 
   useEffect(() => {
     let active = true;
@@ -75,7 +70,13 @@ export default function Historial() {
 
       if (!active) return;
 
-      setData(res.success && Array.isArray(res.data) ? res.data : []);
+      if (res.success && Array.isArray(res.data)) {
+        setData(res.data);
+        setError("");
+      } else {
+        setData([]);
+        setError(res.error || "No se pudieron cargar los ingresos.");
+      }
       setLoading(false);
     }
 
@@ -166,7 +167,7 @@ export default function Historial() {
               </p>
             </div>
             <div className="mini-note history-note">
-              <strong>Fecha:</strong> {selectedDate}
+              <strong>Fecha:</strong> {selectedDateLabel}
               <span style={{ marginLeft: 12 }}>
                 <strong>Registros:</strong> {filteredRows.length}
               </span>
@@ -211,6 +212,10 @@ export default function Historial() {
               <span className="skeleton skeleton--md" />
               <span className="skeleton skeleton--lg" />
               <span className="skeleton skeleton--sm" />
+            </div>
+          ) : error ? (
+            <div className="empty-state" style={{ marginTop: 20 }}>
+              {error}
             </div>
           ) : filteredRows.length > 0 ? (
             <div className="history-table-shell">
