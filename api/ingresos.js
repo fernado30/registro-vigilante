@@ -1,8 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-
-let adminClient = null;
-
-function getSupabaseAdmin() {
+function getSupabaseConfig() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -12,11 +8,10 @@ function getSupabaseAdmin() {
     );
   }
 
-  if (!adminClient) {
-    adminClient = createClient(supabaseUrl, serviceRoleKey);
-  }
-
-  return adminClient;
+  return {
+    supabaseUrl: supabaseUrl.replace(/\/$/, ""),
+    serviceRoleKey,
+  };
 }
 
 const missingTableMessage =
@@ -71,24 +66,57 @@ const buildIngresoPayload = ({
   return payload;
 };
 
+async function supabaseRequest(path, { method = "GET", body = null } = {}) {
+  const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
+  const response = await fetch(`${supabaseUrl}${path}`, {
+    method,
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      Accept: "application/json",
+      ...(body !== null
+        ? {
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+          }
+        : {}),
+    },
+    body: body !== null ? JSON.stringify(body) : undefined,
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  const payload = contentType.includes("application/json")
+    ? await response.json()
+    : await response.text();
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    payload,
+  };
+}
+
 export default async function handler(req, res) {
   try {
-    const supabase = getSupabaseAdmin();
-
     if (req.method === "GET") {
-      const { data, error } = await supabase
-        .from("ingresos")
-        .select("*")
-        .order("fecha_ingreso", { ascending: false });
+      const { ok, status, payload } = await supabaseRequest(
+        "/rest/v1/ingresos?select=*&order=fecha_ingreso.desc"
+      );
 
-      if (error) {
-        if (isSchemaError(error)) throw new Error(missingTableMessage);
-        throw error;
+      if (!ok) {
+        const errorText =
+          typeof payload === "string"
+            ? payload
+            : payload?.message || payload?.hint || JSON.stringify(payload);
+        if (String(errorText).toLowerCase().includes("does not exist")) {
+          throw new Error(missingTableMessage);
+        }
+        throw new Error(errorText || `Supabase GET failed with status ${status}`);
       }
 
       return res.status(200).json({
         success: true,
-        data,
+        data: Array.isArray(payload) ? payload : [],
       });
     }
 
@@ -120,9 +148,12 @@ export default async function handler(req, res) {
         safeTipoVehiculo,
       });
 
-      let { data, error } = await supabase.from("ingresos").insert([primaryPayload]);
+      let { ok, status, payload } = await supabaseRequest("/rest/v1/ingresos", {
+        method: "POST",
+        body: primaryPayload,
+      });
 
-      if (isMissingColumnError(error, "vigilante")) {
+      if (!ok && isMissingColumnError(payload, "vigilante")) {
         const fallbackPayload = buildIngresoPayload({
           nombre,
           documento,
@@ -135,17 +166,24 @@ export default async function handler(req, res) {
           includeVigilante: false,
         });
 
-        ({ data, error } = await supabase.from("ingresos").insert([fallbackPayload]));
+        ({ ok, status, payload } = await supabaseRequest("/rest/v1/ingresos", {
+          method: "POST",
+          body: fallbackPayload,
+        }));
       }
 
-      if (error) {
-        if (isSchemaError(error)) throw new Error(missingSchemaMessage);
-        throw error;
+      if (!ok) {
+        const errorText =
+          typeof payload === "string"
+            ? payload
+            : payload?.message || payload?.hint || JSON.stringify(payload);
+        if (isSchemaError(payload)) throw new Error(missingSchemaMessage);
+        throw new Error(errorText || `Supabase POST failed with status ${status}`);
       }
 
       return res.status(201).json({
         success: true,
-        data,
+        data: Array.isArray(payload) ? payload : payload,
       });
     }
 
@@ -160,13 +198,20 @@ export default async function handler(req, res) {
         });
       }
 
-      const { data: current, error: findError } = await supabase
-        .from("ingresos")
-        .select("id, estado, hora_salida")
-        .eq("id", ingresoId)
-        .maybeSingle();
+      const { ok: findOk, status: findStatus, payload: findPayload } = await supabaseRequest(
+        `/rest/v1/ingresos?id=eq.${ingresoId}&select=id,estado,hora_salida`
+      );
 
-      if (findError) throw findError;
+      if (!findOk) {
+        const errorText =
+          typeof findPayload === "string"
+            ? findPayload
+            : findPayload?.message || findPayload?.hint || JSON.stringify(findPayload);
+        if (isSchemaError(findPayload)) throw new Error(missingSchemaMessage);
+        throw new Error(errorText || `Supabase GET failed with status ${findStatus}`);
+      }
+
+      const current = Array.isArray(findPayload) ? findPayload[0] : null;
 
       if (!current) {
         return res.status(404).json({
@@ -182,24 +227,29 @@ export default async function handler(req, res) {
         });
       }
 
-      const { data, error } = await supabase
-        .from("ingresos")
-        .update({
-          estado: "salio",
-          hora_salida: new Date().toISOString(),
-        })
-        .eq("id", ingresoId)
-        .select("*")
-        .single();
+      const { ok, status, payload } = await supabaseRequest(
+        `/rest/v1/ingresos?id=eq.${ingresoId}`,
+        {
+          method: "PATCH",
+          body: {
+            estado: "salio",
+            hora_salida: new Date().toISOString(),
+          },
+        }
+      );
 
-      if (error) {
-        if (isSchemaError(error)) throw new Error(missingSchemaMessage);
-        throw error;
+      if (!ok) {
+        const errorText =
+          typeof payload === "string"
+            ? payload
+            : payload?.message || payload?.hint || JSON.stringify(payload);
+        if (isSchemaError(payload)) throw new Error(missingSchemaMessage);
+        throw new Error(errorText || `Supabase PATCH failed with status ${status}`);
       }
 
       return res.status(200).json({
         success: true,
-        data,
+        data: Array.isArray(payload) ? payload[0] || null : payload,
       });
     }
 
