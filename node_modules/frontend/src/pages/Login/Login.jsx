@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import { AuthContext } from "../../context/auth-context";
 import { useNavigate } from "react-router-dom";
+import { isAdminUser } from "../../utils/ingresos";
 
 function LockIcon() {
   return (
@@ -76,7 +77,8 @@ export default function Login() {
       return;
     }
 
-    const { error } = await login(email, password);
+    const result = await login(email, password);
+    const { error } = result;
 
     setLoading(false);
 
@@ -85,7 +87,7 @@ export default function Login() {
       return;
     }
 
-    navigate("/dashboard");
+    navigate(isAdminUser(result.data?.user) ? "/admin" : "/dashboard");
   };
 
   return (

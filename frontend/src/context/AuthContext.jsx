@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { AuthContext } from "./auth-context";
-import { getVigilanteName } from "../utils/ingresos";
+import { getUserRole, getVigilanteName } from "../utils/ingresos";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [vigilanteName, setVigilanteName] = useState("Sin asignar");
+  const [userRole, setUserRole] = useState("vigilante");
 
   const syncUserState = useCallback((nextUser) => {
     setUser(nextUser || null);
+    setUserRole(getUserRole(nextUser));
 
     const resolvedName = getVigilanteName(nextUser);
 
@@ -52,14 +54,20 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     hydrateUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        await hydrateUser(session?.user || null);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT" || !session?.access_token) {
+        syncUserState(null);
+        setAuthReady(true);
+        return;
       }
-    );
+
+      await hydrateUser(session?.user || null);
+    });
 
     return () => subscription.unsubscribe();
-  }, [hydrateUser]);
+  }, [hydrateUser, syncUserState]);
 
   const login = async (email, password) => {
     const result = await supabase.auth.signInWithPassword({ email, password });
@@ -78,7 +86,6 @@ export const AuthProvider = ({ children }) => {
       options: {
         data: {
           full_name: fullName,
-          role: "vigilante",
         },
       },
     });
@@ -96,13 +103,30 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
     localStorage.removeItem("vigilante_name");
     syncUserState(null);
+    setAuthReady(true);
+
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Si Supabase tarda o falla, la UI ya salió al login inmediatamente.
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, vigilanteName, authReady, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        vigilanteName,
+        authReady,
+        login,
+        register,
+        logout,
+        userRole,
+        isAdmin: userRole === "admin",
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

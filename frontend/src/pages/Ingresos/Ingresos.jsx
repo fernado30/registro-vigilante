@@ -5,7 +5,13 @@ import { AuthContext } from "../../context/auth-context";
 import { getVigilanteName } from "../../utils/ingresos";
 
 export default function Ingresos() {
-  const { user, vigilanteName: sessionVigilanteName, authReady, logout } = useContext(AuthContext);
+  const {
+    user,
+    vigilanteName: sessionVigilanteName,
+    authReady,
+    logout,
+    isAdmin,
+  } = useContext(AuthContext);
   const navigate = useNavigate();
   const vigilanteName = authReady ? sessionVigilanteName || getVigilanteName(user) : "Cargando...";
   const currentTime = new Date().toLocaleTimeString("es-CO", {
@@ -81,6 +87,11 @@ export default function Ingresos() {
           </div>
 
           <div className="top-actions">
+            {isAdmin ? (
+              <button className="button button--ghost" onClick={() => navigate("/admin")}>
+                Administrador
+              </button>
+            ) : null}
             <button className="button button--ghost" onClick={() => navigate("/historial")}>
               Ver historial
             </button>
