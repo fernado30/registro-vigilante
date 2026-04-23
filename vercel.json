@@ -3,14 +3,14 @@
   "buildCommand": "cd frontend && npm install --include=optional && npm run build",
   "outputDirectory": "frontend/dist",
   "functions": {
-    "api/**/*.js": {
+    "api/ingresos.js": {
       "maxDuration": 10
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/ingresos/$1"
+      "destination": "/api/$1"
     },
     {
       "source": "/(.*)",
