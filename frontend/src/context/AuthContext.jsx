@@ -52,20 +52,14 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     hydrateUser();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_OUT" || !session?.access_token) {
-        syncUserState(null);
-        setAuthReady(true);
-        return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        await hydrateUser(session?.user || null);
       }
-
-      await hydrateUser(session?.user || null);
-    });
+    );
 
     return () => subscription.unsubscribe();
-  }, [hydrateUser, syncUserState]);
+  }, [hydrateUser]);
 
   const login = async (email, password) => {
     const result = await supabase.auth.signInWithPassword({ email, password });
@@ -102,15 +96,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem("vigilante_name");
     syncUserState(null);
-    setAuthReady(true);
-
-    try {
-      await supabase.auth.signOut();
-    } catch {
-      // Si Supabase tarda o falla, la UI ya salió al login inmediatamente.
-    }
   };
 
   return (

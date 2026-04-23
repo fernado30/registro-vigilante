@@ -49,7 +49,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -57,13 +56,7 @@ export default function Dashboard() {
     setLoading(true);
     const res = await api("/ingresos");
 
-    if (res.success && Array.isArray(res.data)) {
-      setData(res.data);
-      setError("");
-    } else {
-      setData([]);
-      setError(res.error || "No se pudieron cargar los ingresos.");
-    }
+    setData(res.success && Array.isArray(res.data) ? res.data : []);
     setLoading(false);
   };
 
@@ -75,13 +68,7 @@ export default function Dashboard() {
 
       if (!active) return;
 
-      if (res.success && Array.isArray(res.data)) {
-        setData(res.data);
-        setError("");
-      } else {
-        setData([]);
-        setError(res.error || "No se pudieron cargar los ingresos.");
-      }
+      setData(res.success && Array.isArray(res.data) ? res.data : []);
       setLoading(false);
     }
 
@@ -286,10 +273,6 @@ export default function Dashboard() {
                 <span className="skeleton skeleton--md" />
                 <span className="skeleton skeleton--lg" />
                 <span className="skeleton skeleton--sm" />
-              </div>
-            ) : error ? (
-              <div className="empty-state" style={{ marginTop: 20 }}>
-                {error}
               </div>
             ) : filteredIngresos.length > 0 ? (
               <div className="vigilance-table-shell">
