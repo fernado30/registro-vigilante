@@ -58,6 +58,29 @@ function sameCalendarDate(isoValue, dateValue) {
   return `${year}-${month}-${day}` === dateValue;
 }
 
+function buildPageItems(currentPage, totalPages) {
+  if (totalPages <= 1) return [1];
+
+  const pageSet = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+  const pages = Array.from(pageSet)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+
+  const items = [];
+
+  pages.forEach((page, index) => {
+    const previous = pages[index - 1];
+
+    if (typeof previous === "number" && page - previous > 1) {
+      items.push("ellipsis");
+    }
+
+    items.push(page);
+  });
+
+  return items;
+}
+
 export default function Historial() {
   const { user, logout, isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -66,6 +89,8 @@ export default function Historial() {
   const [selectedDate, setSelectedDate] = useState(getTodayValue());
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("todos");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     let active = true;
@@ -109,6 +134,14 @@ export default function Historial() {
       return matchesDate && matchesType && matchesSearch;
     });
   }, [data, searchTerm, selectedDate, selectedType]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const effectiveCurrentPage = Math.min(currentPage, totalPages);
+  const pageStartIndex = (effectiveCurrentPage - 1) * pageSize;
+  const visibleRows = filteredRows.slice(pageStartIndex, pageStartIndex + pageSize);
+  const pageStart = filteredRows.length > 0 ? pageStartIndex + 1 : 0;
+  const pageEnd = Math.min(pageStartIndex + pageSize, filteredRows.length);
+  const pageItems = buildPageItems(effectiveCurrentPage, totalPages);
 
   const activeTypes = useMemo(() => {
     const types = new Set();
@@ -183,7 +216,10 @@ export default function Historial() {
               className="input"
               type="date"
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                setCurrentPage(1);
+              }}
             />
             <div className="search-shell history-search">
               <span className="search-shell__icon" aria-hidden="true">
@@ -194,13 +230,19 @@ export default function Historial() {
                 type="search"
                 placeholder="Buscar nombre, doc, apto, placa o vigilante"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
             <select
               className="select"
               value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
+              onChange={(e) => {
+                setSelectedType(e.target.value);
+                setCurrentPage(1);
+              }}
             >
               {activeTypes.map((type) => (
                 <option key={type} value={type}>
@@ -219,7 +261,12 @@ export default function Historial() {
             </div>
           ) : filteredRows.length > 0 ? (
             <div className="history-table-shell">
-              <div className="history-table__meta">{filteredRows.length} registros</div>
+              <div className="history-table__meta">
+                <span>{filteredRows.length} registros</span>
+                <span className="history-table__meta-detail">
+                  Mostrando {pageStart}-{pageEnd} de {filteredRows.length}
+                </span>
+              </div>
 
               <table className="history-table">
                 <thead>
@@ -235,7 +282,7 @@ export default function Historial() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRows.map((item, index) => (
+                  {visibleRows.map((item, index) => (
                     <tr key={item.id || `${item.nombre}-${index}`}>
                       <td className="history-table__name">{item.nombre || "Sin nombre"}</td>
                       <td>{item.documento || "--"}</td>
@@ -259,6 +306,56 @@ export default function Historial() {
                   ))}
                 </tbody>
               </table>
+
+              <div className="history-pagination">
+                <div className="history-pagination__info">
+                  Pagina <strong>{effectiveCurrentPage}</strong> de <strong>{totalPages}</strong>
+                </div>
+
+                <div className="history-pagination__controls" aria-label="Paginacion del historial">
+                  <button
+                    type="button"
+                    className="history-pagination__button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.max(1, Math.min(totalPages, page - 1)))
+                    }
+                    disabled={effectiveCurrentPage === 1}
+                  >
+                    Anterior
+                  </button>
+
+                  {pageItems.map((item, index) =>
+                    item === "ellipsis" ? (
+                      <span key={`ellipsis-${index}`} className="history-pagination__ellipsis">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        className={`history-pagination__button ${
+                          item === effectiveCurrentPage ? "history-pagination__button--active" : ""
+                        }`}
+                        onClick={() => setCurrentPage(item)}
+                        aria-current={item === effectiveCurrentPage ? "page" : undefined}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    type="button"
+                    className="history-pagination__button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.min(totalPages, Math.max(1, page + 1)))
+                    }
+                    disabled={effectiveCurrentPage === totalPages}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="empty-state" style={{ marginTop: 20 }}>

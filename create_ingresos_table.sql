@@ -23,6 +23,8 @@ ALTER TABLE public.ingresos
   ADD COLUMN IF NOT EXISTS estado TEXT NOT NULL DEFAULT 'adentro',
   ADD COLUMN IF NOT EXISTS hora_salida TIMESTAMPTZ;
 
+COMMENT ON COLUMN public.ingresos.vigilante IS 'Nombre del vigilante que registro el ingreso';
+
 -- Asegurar que los registros antiguos queden marcados como adentro
 UPDATE public.ingresos
 SET estado = 'adentro'

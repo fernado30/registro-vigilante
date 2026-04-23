@@ -1190,6 +1190,16 @@
   padding: 18px 22px 0;
   color: #64748b;
   font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.history-table__meta-detail {
+  color: #94a3b8;
+  font-size: 0.9rem;
 }
 
 .history-table {
@@ -1226,6 +1236,68 @@
 .history-table__name {
   font-weight: 800;
   color: #1f2937;
+}
+
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 22px 22px;
+}
+
+.history-pagination__info {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.history-pagination__controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.history-pagination__button {
+  border: 1px solid rgba(191, 219, 254, 0.85);
+  border-radius: 14px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #334155;
+  font-weight: 700;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.history-pagination__button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.14);
+}
+
+.history-pagination__button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.history-pagination__button--active {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--primary-strong), var(--mint));
+  box-shadow: 0 12px 24px rgba(82, 114, 255, 0.18);
+}
+
+.history-pagination__ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  color: #94a3b8;
+  font-weight: 700;
 }
 
 .vigilance-side {
@@ -1510,6 +1582,10 @@
     grid-template-columns: 1fr;
   }
 
+  .history-pagination {
+    padding-inline: 18px;
+  }
+
   .admin-hero,
   .admin-toolbar__search,
   .section-head,
@@ -1536,6 +1612,11 @@
   .admin-toolbar__actions,
   .shift-card__actions {
     width: 100%;
+  }
+
+  .history-pagination__controls {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
 
