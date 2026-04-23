@@ -34,17 +34,6 @@ function getDateKey(value) {
   return `${year}-${month}-${day}`;
 }
 
-function formatDate(value) {
-  if (!value) return "--";
-
-  return new Intl.DateTimeFormat("es-CO", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "2-digit",
-  }).format(new Date(`${value}T00:00:00`));
-}
-
 function formatDateTime(value) {
   if (!value) return "--";
 
