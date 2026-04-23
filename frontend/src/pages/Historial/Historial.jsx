@@ -30,6 +30,14 @@ function SearchIcon() {
   );
 }
 
+function getTodayValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function formatTime(value) {
   if (!value) return "--:--";
 
@@ -51,16 +59,13 @@ function sameCalendarDate(isoValue, dateValue) {
 }
 
 export default function Historial() {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(getTodayValue());
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("todos");
-
-  const selectedDateLabel = selectedDate || "Todas las fechas";
 
   useEffect(() => {
     let active = true;
@@ -70,13 +75,7 @@ export default function Historial() {
 
       if (!active) return;
 
-      if (res.success && Array.isArray(res.data)) {
-        setData(res.data);
-        setError("");
-      } else {
-        setData([]);
-        setError(res.error || "No se pudieron cargar los ingresos.");
-      }
+      setData(res.success && Array.isArray(res.data) ? res.data : []);
       setLoading(false);
     }
 
@@ -140,6 +139,11 @@ export default function Historial() {
           </div>
 
           <div className="top-actions">
+            {isAdmin ? (
+              <button className="button button--ghost" onClick={() => navigate("/admin")}>
+                Administrador
+              </button>
+            ) : null}
             <button className="button button--ghost" onClick={() => navigate("/dashboard")}>
               Dashboard
             </button>
@@ -167,7 +171,7 @@ export default function Historial() {
               </p>
             </div>
             <div className="mini-note history-note">
-              <strong>Fecha:</strong> {selectedDateLabel}
+              <strong>Fecha:</strong> {selectedDate}
               <span style={{ marginLeft: 12 }}>
                 <strong>Registros:</strong> {filteredRows.length}
               </span>
@@ -212,10 +216,6 @@ export default function Historial() {
               <span className="skeleton skeleton--md" />
               <span className="skeleton skeleton--lg" />
               <span className="skeleton skeleton--sm" />
-            </div>
-          ) : error ? (
-            <div className="empty-state" style={{ marginTop: 20 }}>
-              {error}
             </div>
           ) : filteredRows.length > 0 ? (
             <div className="history-table-shell">

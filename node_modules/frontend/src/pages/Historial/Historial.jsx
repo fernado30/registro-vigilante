@@ -59,7 +59,7 @@ function sameCalendarDate(isoValue, dateValue) {
 }
 
 export default function Historial() {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -139,6 +139,11 @@ export default function Historial() {
           </div>
 
           <div className="top-actions">
+            {isAdmin ? (
+              <button className="button button--ghost" onClick={() => navigate("/admin")}>
+                Administrador
+              </button>
+            ) : null}
             <button className="button button--ghost" onClick={() => navigate("/dashboard")}>
               Dashboard
             </button>

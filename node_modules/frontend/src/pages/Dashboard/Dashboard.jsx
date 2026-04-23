@@ -45,7 +45,7 @@ function formatTime(value) {
 }
 
 export default function Dashboard() {
-  const { logout } = useContext(AuthContext);
+  const { logout, isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -208,6 +208,11 @@ export default function Dashboard() {
               <span className="pill__dot" />
               Turno activo
             </span>
+            {isAdmin ? (
+              <button className="button button--ghost" onClick={() => navigate("/admin")}>
+                Administrador
+              </button>
+            ) : null}
             <button className="button button--ghost" onClick={() => navigate("/ingresos")}>
               Nuevo ingreso
             </button>

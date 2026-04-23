@@ -9,6 +9,18 @@ export function getVigilanteName(user) {
   return candidate?.trim() || "Sin asignar";
 }
 
+export function getUserRole(user) {
+  const metadata = user?.app_metadata || {};
+  const role = `${metadata.role || ""}`.trim().toLowerCase();
+
+  if (role === "admin") return "admin";
+  return "vigilante";
+}
+
+export function isAdminUser(user) {
+  return getUserRole(user) === "admin";
+}
+
 export function getTipoVisitaLabel(tipo) {
   const normalized = `${tipo || ""}`.toLowerCase();
 
