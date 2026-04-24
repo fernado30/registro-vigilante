@@ -4,6 +4,7 @@ import { api } from "../../services/api";
 import {
   getPagoAdministracionClass,
   getPagoAdministracionLabel,
+  getPagoAdministracionVencimientoEstado,
   isPagoAdministracionPagado,
 } from "../../utils/ingresos";
 import { downloadStructuredReportPdf } from "../../utils/pdfReport";
@@ -152,11 +153,27 @@ export default function PagoAdministracion() {
 
   const pagados = filteredRows.filter((item) => isPagoAdministracionPagado(item?.pago_administracion)).length;
   const pendientes = filteredRows.length - pagados;
+  const paymentAlerts = useMemo(() => {
+    const now = new Date();
+
+    return filteredRows
+      .map((item) => ({
+        item,
+        status: getPagoAdministracionVencimientoEstado(item, now),
+      }))
+      .filter(({ status }) => status.warning)
+      .sort(
+        (a, b) =>
+          (a.status.daysLeft ?? Number.POSITIVE_INFINITY) -
+          (b.status.daysLeft ?? Number.POSITIVE_INFINITY)
+      );
+  }, [filteredRows]);
 
   const summaryCards = [
     { label: "Total registros", value: filteredRows.length, note: "Ingresos revisados" },
     { label: "Pagados", value: pagados, note: "Con administracion al dia" },
     { label: "Pendientes", value: pendientes, note: "Aun sin confirmar" },
+    { label: "Alertas", value: paymentAlerts.length, note: "Vence pronto o ya vencido" },
   ];
 
   const handleTogglePago = async (item) => {
@@ -279,6 +296,40 @@ export default function PagoAdministracion() {
             </div>
           </section>
 
+          {paymentAlerts.length > 0 ? (
+            <section className="payment-alert fade-up" role="status" aria-live="polite">
+              <div className="payment-alert__icon">
+                <span />
+              </div>
+              <div className="payment-alert__content">
+                <div className="payment-alert__header">
+                  <strong>Pago por vencer</strong>
+                  <span className="payment-alert__count">
+                    {paymentAlerts.length} registro{paymentAlerts.length === 1 ? "" : "s"} requieren
+                    revisión
+                  </span>
+                </div>
+                <p className="payment-alert__text">
+                  {paymentAlerts.filter(({ status }) => status.daysLeft < 0).length > 0
+                    ? `${paymentAlerts.filter(({ status }) => status.daysLeft < 0).length} ya vencido${
+                        paymentAlerts.filter(({ status }) => status.daysLeft < 0).length === 1
+                          ? ""
+                          : "s"
+                      }`
+                    : "Hay pagos próximos a vencer en los siguientes días."}
+                </p>
+                <div className="payment-alert__chips">
+                  <span className="status-tag status-tag--amber">
+                    {paymentAlerts.filter(({ status }) => status.daysLeft >= 0).length} por vencer
+                  </span>
+                  <span className="status-tag status-tag--peach">
+                    {paymentAlerts.filter(({ status }) => status.daysLeft < 0).length} vencidas
+                  </span>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
           <section className="stats-grid stats-grid--compact admin-stats">
             {summaryCards.map((stat, index) => (
               <article
@@ -377,6 +428,7 @@ export default function PagoAdministracion() {
                       <th>Vigilante</th>
                       <th>Pago admin</th>
                       <th>Fecha pago</th>
+                      <th>Vence</th>
                       <th>Acción</th>
                     </tr>
                   </thead>
@@ -384,6 +436,7 @@ export default function PagoAdministracion() {
                     {visibleRows.map((item, index) => {
                       const paid = isPagoAdministracionPagado(item?.pago_administracion);
                       const paymentDate = formatDateTime(item?.fecha_pago_administracion);
+                      const paymentStatus = getPagoAdministracionVencimientoEstado(item);
 
                       return (
                         <tr key={item.id || `${item.nombre}-${index}`} className="data-row">
@@ -406,6 +459,14 @@ export default function PagoAdministracion() {
                           </td>
                           <td className="table-cell">
                             <span className="table-value">{paid ? paymentDate : "--"}</span>
+                          </td>
+                          <td className="table-cell">
+                            <div className={`payment-status payment-status--${paymentStatus.tone}`}>
+                              <span className="payment-status__label">{paymentStatus.label}</span>
+                              <small className="payment-status__sub">
+                                {paymentStatus.dueDate ? formatDateTime(paymentStatus.dueDate) : "Sin fecha"}
+                              </small>
+                            </div>
                           </td>
                           <td className="table-cell">
                             <button
