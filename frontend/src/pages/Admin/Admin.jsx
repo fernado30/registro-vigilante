@@ -67,6 +67,29 @@ function formatDuration(minutes) {
   return `${hours} h ${rest.toString().padStart(2, "0")} min`;
 }
 
+function buildPageItems(currentPage, totalPages) {
+  if (totalPages <= 1) return [1];
+
+  const pageSet = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+  const pages = Array.from(pageSet)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+
+  const items = [];
+
+  pages.forEach((page, index) => {
+    const previous = pages[index - 1];
+
+    if (typeof previous === "number" && page - previous > 1) {
+      items.push("ellipsis");
+    }
+
+    items.push(page);
+  });
+
+  return items;
+}
+
 function safeParseShifts(value) {
   try {
     const parsed = JSON.parse(value);
@@ -147,6 +170,8 @@ export default function Admin() {
   const [dateTo, setDateTo] = useState(getTodayValue());
   const [selectedType, setSelectedType] = useState("todos");
   const [selectedVigilante, setSelectedVigilante] = useState("todos");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const [shifts, setShifts] = useState(() => loadStoredShifts());
   const [savingShift, setSavingShift] = useState(false);
   const [shiftForm, setShiftForm] = useState({
@@ -234,6 +259,14 @@ export default function Admin() {
         return matchesDate && matchesType && matchesVigilante && matchesSearch;
       });
   }, [data, dateFrom, dateTo, searchTerm, selectedType, selectedVigilante]);
+
+  const totalPages = Math.max(1, Math.ceil(reportRows.length / pageSize));
+  const effectiveCurrentPage = Math.min(currentPage, totalPages);
+  const pageStartIndex = (effectiveCurrentPage - 1) * pageSize;
+  const visibleRows = reportRows.slice(pageStartIndex, pageStartIndex + pageSize);
+  const pageStart = reportRows.length > 0 ? pageStartIndex + 1 : 0;
+  const pageEnd = Math.min(pageStartIndex + pageSize, reportRows.length);
+  const pageItems = buildPageItems(effectiveCurrentPage, totalPages);
 
   const typeOptions = useMemo(() => {
     const types = new Set();
@@ -340,11 +373,18 @@ export default function Admin() {
     ];
   }, [shifts]);
 
-  const recentRows = useMemo(() => reportRows.slice(0, 8), [reportRows]);
-
   const handleLogout = async () => {
     await logout();
     navigate("/");
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setDateFrom(getDateOffset(7));
+    setDateTo(getTodayValue());
+    setSelectedType("todos");
+    setSelectedVigilante("todos");
+    setCurrentPage(1);
   };
 
   const handleExport = () => {
@@ -531,7 +571,10 @@ export default function Admin() {
                 className="input"
                 type="date"
                 value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
             <div className="field-group">
@@ -543,7 +586,10 @@ export default function Admin() {
                 className="input"
                 type="date"
                 value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
             <div className="field-group">
@@ -554,7 +600,10 @@ export default function Admin() {
                 id="admin-type"
                 className="select"
                 value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
+                onChange={(e) => {
+                  setSelectedType(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
                 {typeOptions.map((type) => (
                   <option key={type} value={type}>
@@ -571,7 +620,10 @@ export default function Admin() {
                 id="admin-vigilante"
                 className="select"
                 value={selectedVigilante}
-                onChange={(e) => setSelectedVigilante(e.target.value)}
+                onChange={(e) => {
+                  setSelectedVigilante(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
                 <option value="todos">Todos los vigilantes</option>
                 {vigilantes.map((vigilante) => (
@@ -593,23 +645,17 @@ export default function Admin() {
                 type="search"
                 placeholder="Buscar por nombre, documento, apto, placa o vigilante"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
             <div className="admin-toolbar__actions">
               <button className="button button--ghost" onClick={handleExport} disabled={loading}>
                 Exportar PDF
               </button>
-              <button
-                className="button button--soft"
-                onClick={() => {
-                  setSearchTerm("");
-                  setDateFrom(getDateOffset(7));
-                  setDateTo(getTodayValue());
-                  setSelectedType("todos");
-                  setSelectedVigilante("todos");
-                }}
-              >
+              <button className="button button--soft" onClick={handleResetFilters}>
                 Limpiar filtros
               </button>
             </div>
@@ -690,7 +736,7 @@ export default function Admin() {
               </p>
             </div>
             <div className="mini-note admin-mini-note">
-              <strong>Registros:</strong> {recentRows.length}
+              <strong>Registros:</strong> {reportRows.length}
             </div>
           </div>
 
@@ -701,8 +747,15 @@ export default function Admin() {
               <span className="skeleton skeleton--lg" />
               <span className="skeleton skeleton--sm" />
             </div>
-          ) : recentRows.length > 0 ? (
+          ) : reportRows.length > 0 ? (
             <div className="history-table-shell admin-table-shell">
+              <div className="history-table__meta">
+                <span>{reportRows.length} registros</span>
+                <span className="history-table__meta-detail">
+                  Mostrando {pageStart}-{pageEnd} de {reportRows.length}
+                </span>
+              </div>
+
               <table className="history-table admin-table">
                 <thead>
                   <tr>
@@ -715,7 +768,7 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentRows.map((item, index) => (
+                  {visibleRows.map((item, index) => (
                     <tr key={item.id || `${item.nombre}-${index}`}>
                       <td className="history-table__name">{item.nombre || "Sin nombre"}</td>
                       <td>
@@ -737,6 +790,56 @@ export default function Admin() {
                   ))}
                 </tbody>
               </table>
+
+              <div className="history-pagination">
+                <div className="history-pagination__info">
+                  Pagina <strong>{effectiveCurrentPage}</strong> de <strong>{totalPages}</strong>
+                </div>
+
+                <div className="history-pagination__controls" aria-label="Paginacion del admin">
+                  <button
+                    type="button"
+                    className="history-pagination__button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.max(1, Math.min(totalPages, page - 1)))
+                    }
+                    disabled={effectiveCurrentPage === 1}
+                  >
+                    Anterior
+                  </button>
+
+                  {pageItems.map((item, index) =>
+                    item === "ellipsis" ? (
+                      <span key={`ellipsis-${index}`} className="history-pagination__ellipsis">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        className={`history-pagination__button ${
+                          item === effectiveCurrentPage ? "history-pagination__button--active" : ""
+                        }`}
+                        onClick={() => setCurrentPage(item)}
+                        aria-current={item === effectiveCurrentPage ? "page" : undefined}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    type="button"
+                    className="history-pagination__button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.min(totalPages, Math.max(1, page + 1)))
+                    }
+                    disabled={effectiveCurrentPage === totalPages}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="empty-state" style={{ marginTop: 20 }}>
