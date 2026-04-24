@@ -152,7 +152,7 @@ function BarChart({ data, label }) {
 }
 
 export default function Reportes() {
-  const { logout, isAdmin } = useContext(AuthContext);
+  const { isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [data, setData] = useState([]);
@@ -442,11 +442,6 @@ export default function Reportes() {
     },
   ];
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
-  };
-
   const handleExport = () => {
     downloadStructuredReportPdf({
       filename: `reportes-vigilancia-${getTodayValue()}.pdf`,
@@ -550,17 +545,6 @@ export default function Reportes() {
             </div>
           </div>
 
-          <div className="top-actions">
-            <button className="button button--ghost" onClick={() => navigate("/admin")}>
-              Administrador
-            </button>
-            <button className="button button--ghost" onClick={() => navigate("/dashboard")}>
-              Dashboard
-            </button>
-            <button className="button button--soft" onClick={handleLogout}>
-              Cerrar sesión
-            </button>
-          </div>
         </header>
 
         <section className="panel admin-hero fade-up">

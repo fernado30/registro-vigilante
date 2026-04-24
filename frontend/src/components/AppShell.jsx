@@ -174,6 +174,9 @@ function SidebarLink({ to, label, icon, end = false }) {
       <span className="app-shell__nav-link-icon" aria-hidden="true">
         <NavIcon />
       </span>
+      <span className="app-shell__nav-link-tooltip" aria-hidden="true">
+        {label}
+      </span>
     </NavLink>
   );
 }
@@ -221,6 +224,9 @@ export default function AppShell({ children }) {
           >
             <span className="app-shell__nav-link-icon" aria-hidden="true">
               <LogoutIcon />
+            </span>
+            <span className="app-shell__nav-link-tooltip" aria-hidden="true">
+              Cerrar sesion
             </span>
           </button>
         </div>
