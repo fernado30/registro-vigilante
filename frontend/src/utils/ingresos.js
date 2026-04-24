@@ -41,3 +41,17 @@ export function getTipoVisitaClass(tipo) {
 
   return "status-tag status-tag--amber";
 }
+
+export function isPagoAdministracionPagado(value) {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
+export function getPagoAdministracionLabel(value) {
+  return isPagoAdministracionPagado(value) ? "Pagado" : "Pendiente";
+}
+
+export function getPagoAdministracionClass(value) {
+  return isPagoAdministracionPagado(value)
+    ? "status-tag status-tag--mint"
+    : "status-tag status-tag--amber";
+}

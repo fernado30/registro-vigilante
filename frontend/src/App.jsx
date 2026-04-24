@@ -8,6 +8,7 @@ import Ingresos from "./pages/Ingresos/Ingresos";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Historial from "./pages/Historial/Historial";
 import Admin from "./pages/Admin/Admin";
+import PagoAdministracion from "./pages/PagoAdministracion/PagoAdministracion";
 import Reportes from "./pages/Reportes/Reportes";
 
 function PrivateRoute({ children, adminOnly = false }) {
@@ -75,6 +76,14 @@ export default function App() {
           element={
             <PrivateRoute adminOnly>
               <Admin />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/pagos-administracion"
+          element={
+            <PrivateRoute adminOnly>
+              <PagoAdministracion />
             </PrivateRoute>
           }
         />

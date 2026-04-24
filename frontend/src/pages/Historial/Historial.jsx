@@ -3,6 +3,8 @@ import { AuthContext } from "../../context/auth-context";
 import AppShell from "../../components/AppShell";
 import { api } from "../../services/api";
 import {
+  getPagoAdministracionClass,
+  getPagoAdministracionLabel,
   getTipoVisitaClass,
   getTipoVisitaLabel,
   getVigilanteName,
@@ -124,6 +126,7 @@ export default function Historial() {
         item?.placa_vehiculo,
         item?.vigilante,
         item?.tipo_visita,
+        getPagoAdministracionLabel(item?.pago_administracion),
       ]
         .filter(Boolean)
         .join(" ")
@@ -256,6 +259,7 @@ export default function Historial() {
                     <th>Entrada</th>
                     <th>Salida</th>
                     <th>Vigilante</th>
+                    <th>Pago admin</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -279,6 +283,11 @@ export default function Historial() {
                         )}
                       </td>
                       <td>{item.vigilante || "Sin asignar"}</td>
+                      <td>
+                        <span className={getPagoAdministracionClass(item?.pago_administracion)}>
+                          {getPagoAdministracionLabel(item?.pago_administracion)}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

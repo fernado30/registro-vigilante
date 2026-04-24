@@ -11,7 +11,9 @@ CREATE TABLE IF NOT EXISTS public.ingresos (
   tipo_vehiculo TEXT,
   estado TEXT NOT NULL DEFAULT 'adentro',
   hora_salida TIMESTAMPTZ,
-  fecha_ingreso TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  fecha_ingreso TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  pago_administracion BOOLEAN NOT NULL DEFAULT FALSE,
+  fecha_pago_administracion TIMESTAMPTZ
 );
 
 -- Si la tabla ya existia, agregar las columnas nuevas
@@ -21,9 +23,13 @@ ALTER TABLE public.ingresos
   ADD COLUMN IF NOT EXISTS placa_vehiculo TEXT,
   ADD COLUMN IF NOT EXISTS tipo_vehiculo TEXT,
   ADD COLUMN IF NOT EXISTS estado TEXT NOT NULL DEFAULT 'adentro',
-  ADD COLUMN IF NOT EXISTS hora_salida TIMESTAMPTZ;
+  ADD COLUMN IF NOT EXISTS hora_salida TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS pago_administracion BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS fecha_pago_administracion TIMESTAMPTZ;
 
 COMMENT ON COLUMN public.ingresos.vigilante IS 'Nombre del vigilante que registro el ingreso';
+COMMENT ON COLUMN public.ingresos.pago_administracion IS 'Indica si el ingreso tiene administracion pagada';
+COMMENT ON COLUMN public.ingresos.fecha_pago_administracion IS 'Fecha y hora en la que se confirmo el pago de administracion';
 
 -- Asegurar que los registros antiguos queden marcados como adentro
 UPDATE public.ingresos
@@ -33,6 +39,10 @@ WHERE estado IS NULL;
 UPDATE public.ingresos
 SET vigilante = 'Sin asignar'
 WHERE vigilante IS NULL OR trim(vigilante) = '';
+
+UPDATE public.ingresos
+SET pago_administracion = FALSE
+WHERE pago_administracion IS NULL;
 
 -- Habilitar RLS
 ALTER TABLE public.ingresos ENABLE ROW LEVEL SECURITY;

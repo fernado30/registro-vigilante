@@ -117,6 +117,35 @@ function ReportIcon() {
   );
 }
 
+function WalletIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="app-shell__nav-icon">
+      <path
+        d="M4.5 7.5h14A2.5 2.5 0 0 1 21 10v5.5A2.5 2.5 0 0 1 18.5 18h-14A2.5 2.5 0 0 1 2 15.5V10a2.5 2.5 0 0 1 2.5-2.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M15.5 12h3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M5 7.5V6a2 2 0 0 1 2-2h10.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function LogoutIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="app-shell__nav-icon">
@@ -155,6 +184,7 @@ const commonNav = [
 
 const adminNav = [
   { to: "/admin", label: "Administrador", icon: ShieldIcon, end: true },
+  { to: "/pagos-administracion", label: "Pagos admin", icon: WalletIcon, end: true },
   { to: "/reportes", label: "Reportes", icon: ReportIcon },
 ];
 

@@ -62,6 +62,8 @@ const buildIngresoPayload = ({
     tipo_vehiculo: safeTipoVehiculo,
     estado: "adentro",
     hora_salida: null,
+    pago_administracion: false,
+    fecha_pago_administracion: null,
     fecha_ingreso: new Date().toISOString(),
   };
 
@@ -153,6 +155,10 @@ export default async function handler(req, res) {
     if (req.method === "PATCH") {
       const { id } = req.body;
       const ingresoId = Number(id);
+      const hasPagoAdministracion = Object.prototype.hasOwnProperty.call(
+        req.body,
+        "pago_administracion"
+      );
 
       if (!ingresoId) {
         return res.status(400).json({
@@ -163,7 +169,7 @@ export default async function handler(req, res) {
 
       const { data: current, error: findError } = await supabase
         .from("ingresos")
-        .select("id, estado, hora_salida")
+        .select("id, estado, hora_salida, pago_administracion, fecha_pago_administracion")
         .eq("id", ingresoId)
         .maybeSingle();
 
@@ -173,6 +179,41 @@ export default async function handler(req, res) {
         return res.status(404).json({
           success: false,
           error: "No se encontro el ingreso solicitado.",
+        });
+      }
+
+      if (hasPagoAdministracion) {
+        const pagoAdministracion =
+          req.body.pago_administracion === true ||
+          req.body.pago_administracion === "true" ||
+          req.body.pago_administracion === 1 ||
+          req.body.pago_administracion === "1";
+
+        if (current.pago_administracion === pagoAdministracion) {
+          return res.status(200).json({
+            success: true,
+            data: current,
+          });
+        }
+
+        const { data, error } = await supabase
+          .from("ingresos")
+          .update({
+            pago_administracion: pagoAdministracion,
+            fecha_pago_administracion: pagoAdministracion ? new Date().toISOString() : null,
+          })
+          .eq("id", ingresoId)
+          .select("*")
+          .single();
+
+        if (error) {
+          if (isSchemaError(error)) throw new Error(missingSchemaMessage);
+          throw error;
+        }
+
+        return res.status(200).json({
+          success: true,
+          data,
         });
       }
 

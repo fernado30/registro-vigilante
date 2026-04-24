@@ -3,7 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
 import AppShell from "../../components/AppShell";
 import { api } from "../../services/api";
-import { getTipoVisitaClass, getTipoVisitaLabel } from "../../utils/ingresos";
+import {
+  getPagoAdministracionClass,
+  getPagoAdministracionLabel,
+  getTipoVisitaClass,
+  getTipoVisitaLabel,
+  isPagoAdministracionPagado,
+} from "../../utils/ingresos";
 import { downloadStructuredReportPdf } from "../../utils/pdfReport";
 
 function getTodayValue() {
@@ -235,6 +241,7 @@ export default function Reportes() {
           item?.vigilante,
           item?.tipo_visita,
           item?.estado,
+          getPagoAdministracionLabel(item?.pago_administracion),
         ]
           .filter(Boolean)
           .join(" ")
@@ -292,6 +299,10 @@ export default function Reportes() {
     (item) =>
       item?.tiene_vehiculo === true || item?.tiene_vehiculo === "true"
   ).length;
+  const pagosAdministracionPagados = reportRows.filter((item) =>
+    isPagoAdministracionPagado(item?.pago_administracion)
+  ).length;
+  const pagosAdministracionPendientes = totalIngresos - pagosAdministracionPagados;
 
   const avgStay = useMemo(() => {
     const durations = reportRows
@@ -407,6 +418,16 @@ export default function Reportes() {
       value: formatDuration(maxStay),
       note: "Mayor tiempo de estancia",
     },
+    {
+      label: "Pagados administración",
+      value: pagosAdministracionPagados,
+      note: "Con pago confirmado",
+    },
+    {
+      label: "Pendientes administración",
+      value: pagosAdministracionPendientes,
+      note: "Sin pago confirmado",
+    },
   ];
 
   const summaryMetrics = [
@@ -439,6 +460,16 @@ export default function Reportes() {
       label: "Total ingresos",
       value: totalIngresos,
       note: "Registros en el período",
+    },
+    {
+      label: "Pagados admin",
+      value: pagosAdministracionPagados,
+      note: "Con pago confirmado",
+    },
+    {
+      label: "Pendientes admin",
+      value: pagosAdministracionPendientes,
+      note: "Sin pago confirmado",
     },
   ];
 
@@ -490,6 +521,11 @@ export default function Reportes() {
               : "Sin vehiculo",
         },
         { header: "Vigilante", width: 90, getValue: (item) => item.vigilante || "Sin asignar" },
+        {
+          header: "Pago admin",
+          width: 80,
+          getValue: (item) => getPagoAdministracionLabel(item?.pago_administracion),
+        },
         {
           header: "Estado",
           width: 70,
@@ -766,6 +802,7 @@ export default function Reportes() {
                     <th>Apartamento</th>
                     <th>Vehículo</th>
                     <th>Vigilante</th>
+                    <th>Pago admin</th>
                     <th>Estado</th>
                     <th>Salida</th>
                   </tr>
@@ -806,6 +843,11 @@ export default function Reportes() {
                       <td className="table-cell">
                         <span className="table-value">
                           {item.vigilante || "Sin asignar"}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <span className={getPagoAdministracionClass(item?.pago_administracion)}>
+                          {getPagoAdministracionLabel(item?.pago_administracion)}
                         </span>
                       </td>
                       <td className="table-cell">

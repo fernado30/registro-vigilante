@@ -41,6 +41,8 @@ export const createIngreso = async (ingresoData) => {
       tipo_vehiculo: hasVehicle ? ingresoData.tipo_vehiculo ?? null : null,
       estado: "adentro",
       hora_salida: null,
+      pago_administracion: false,
+      fecha_pago_administracion: null,
       fecha_ingreso: new Date().toISOString(),
     };
 
@@ -72,6 +74,22 @@ export const registrarSalida = async (id) => {
     .update({
       estado: "salio",
       hora_salida: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const actualizarPagoAdministracion = async (id, pagoAdministracion) => {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("ingresos")
+    .update({
+      pago_administracion: pagoAdministracion,
+      fecha_pago_administracion: pagoAdministracion ? new Date().toISOString() : null,
     })
     .eq("id", id)
     .select("*")

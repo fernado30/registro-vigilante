@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import AppShell from "../../components/AppShell";
 import { api } from "../../services/api";
-import { getTipoVisitaClass, getTipoVisitaLabel } from "../../utils/ingresos";
+import {
+  getPagoAdministracionClass,
+  getPagoAdministracionLabel,
+  getTipoVisitaClass,
+  getTipoVisitaLabel,
+} from "../../utils/ingresos";
 import { downloadStructuredReportPdf } from "../../utils/pdfReport";
 
 const SHIFT_STORAGE_KEY = "vigilancia_pro_admin_shifts";
@@ -246,6 +251,7 @@ export default function Admin() {
           item?.vigilante,
           item?.tipo_visita,
           item?.estado,
+          getPagoAdministracionLabel(item?.pago_administracion),
         ]
           .filter(Boolean)
           .join(" ")
@@ -419,6 +425,16 @@ export default function Admin() {
           getValue: (item) => getTipoVisitaLabel(item.tipo_visita),
         },
         { header: "Apto", width: 120, getValue: (item) => item.apartamento_destino || "--" },
+        {
+          header: "Pago admin",
+          width: 85,
+          getValue: (item) => getPagoAdministracionLabel(item?.pago_administracion),
+        },
+        {
+          header: "Fecha pago",
+          width: 95,
+          getValue: (item) => formatTime(item?.fecha_pago_administracion),
+        },
         { header: "Salida", width: 80, getValue: (item) => formatTime(item.hora_salida) },
         { header: "Vigilante", width: 110, getValue: (item) => item.vigilante || "Sin asignar" },
         {
@@ -737,6 +753,8 @@ export default function Admin() {
                     <th>Nombre</th>
                     <th>Tipo</th>
                     <th>Apto</th>
+                    <th>Pago admin</th>
+                    <th>Fecha pago</th>
                     <th>Entrada</th>
                     <th>Salida</th>
                     <th>Vigilante</th>
@@ -752,6 +770,12 @@ export default function Admin() {
                         </span>
                       </td>
                       <td>{item.apartamento_destino || "--"}</td>
+                      <td>
+                        <span className={getPagoAdministracionClass(item?.pago_administracion)}>
+                          {getPagoAdministracionLabel(item?.pago_administracion)}
+                        </span>
+                      </td>
+                      <td>{item.pago_administracion ? formatTime(item.fecha_pago_administracion) : "--"}</td>
                       <td>{formatTime(item.fecha_ingreso)}</td>
                       <td>
                         {item.estado === "salio" ? (
