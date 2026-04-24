@@ -2376,7 +2376,7 @@
 .app-shell__sidebar {
   position: fixed;
   top: 20px;
-  left: 20px;
+  right: 20px;
   width: 76px;
   height: calc(100vh - 40px);
   display: flex;
@@ -2513,9 +2513,10 @@
 
 .app-shell__nav-link-tooltip {
   position: absolute;
-  left: calc(100% + 10px);
+  right: calc(100% + 10px);
+  left: auto;
   top: 50%;
-  transform: translateY(-50%) translateX(-6px);
+  transform: translateY(-50%) translateX(6px);
   padding: 10px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.96);
@@ -2582,7 +2583,8 @@
 .app-shell__content {
   position: relative;
   min-width: 0;
-  margin-left: 96px;
+  margin-right: 96px;
+  margin-left: 0;
   padding: 0;
 }
 
@@ -2601,7 +2603,7 @@
   .app-shell__sidebar {
     position: relative;
     top: auto;
-    left: auto;
+    right: auto;
     width: 100%;
     height: auto;
     margin-bottom: 16px;
@@ -2644,7 +2646,7 @@
   }
 
   .app-shell__content {
-    margin-left: 0;
+    margin-right: 0;
   }
 }
 
