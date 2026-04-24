@@ -1529,27 +1529,52 @@ body,
   font-size: 0.92rem;
 }
 
+.vigilance-table__cell--destination,
+.vigilance-table__cell--time,
+.vigilance-table__cell--payment,
+.vigilance-table__cell--state,
+.vigilance-table__cell--action {
+  vertical-align: top;
+}
+
+.vigilance-table__cell--destination .destination-cell,
+.vigilance-table__cell--time .time-cell {
+  display: grid;
+  gap: 6px;
+  min-height: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(191, 219, 254, 0.52);
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.92), rgba(240, 249, 255, 0.82));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 10px 28px rgba(59, 130, 246, 0.06);
+}
+
 .destination-cell__main {
   margin: 0;
-  font-weight: 700;
+  font-weight: 800;
   color: #1f2937;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  word-break: break-word;
 }
 
 .destination-cell__sub {
-  margin: 4px 0 0;
+  margin: 0;
   color: #64748b;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  line-height: 1.35;
 }
 
 .time-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  gap: 6px;
   color: #334155;
 }
 
 .time-cell__label {
-  color: #64748b;
+  color: #5b6b84;
   font-size: 0.82rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1558,15 +1583,30 @@ body,
 
 .time-cell__value {
   color: #1f2937;
-  font-size: 1rem;
+  font-size: 1.03rem;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .time-cell__sub {
-  color: #64748b;
-  font-size: 0.9rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: #49607c;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.2;
+  background: rgba(224, 242, 254, 0.82);
+  border: 1px solid rgba(186, 230, 253, 0.75);
+}
+
+.time-cell__sub--accent {
+  color: #0f766e;
+  background: rgba(220, 252, 231, 0.9);
+  border-color: rgba(167, 243, 208, 0.8);
 }
 
 .row-action {

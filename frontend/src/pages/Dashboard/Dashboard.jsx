@@ -335,7 +335,7 @@ export default function Dashboard() {
                               {getTipoVisitaLabel(item.tipo_visita)}
                             </span>
                           </td>
-                          <td>
+                          <td className="vigilance-table__cell vigilance-table__cell--destination">
                             <div className="destination-cell">
                               <p className="destination-cell__main">
                                 {item.apartamento_destino || "Sin destino"}
@@ -347,30 +347,30 @@ export default function Dashboard() {
                               </p>
                             </div>
                           </td>
-                          <td>
+                          <td className="vigilance-table__cell vigilance-table__cell--time">
                             <div className="time-cell">
                               <span className="time-cell__label">Entrada</span>
                               <strong className="time-cell__value">{entradaFechaHora}</strong>
                               {item.hora_salida ? (
-                                <small className="time-cell__sub">
+                                <span className="time-cell__sub time-cell__sub--accent">
                                   Salida {salidaFechaHora}
-                                </small>
+                                </span>
                               ) : (
-                                <small className="time-cell__sub">Sin salida registrada</small>
+                                <span className="time-cell__sub">Sin salida registrada</span>
                               )}
                             </div>
                           </td>
-                          <td>
+                          <td className="vigilance-table__cell vigilance-table__cell--payment">
                             <span className={getPagoAdministracionClass(item?.pago_administracion)}>
                               {getPagoAdministracionLabel(item?.pago_administracion)}
                             </span>
                           </td>
-                          <td>
+                          <td className="vigilance-table__cell vigilance-table__cell--state">
                             <span className={getStateClass(item.estado)}>
                               {getStateLabel(item.estado)}
                             </span>
                           </td>
-                          <td>
+                          <td className="vigilance-table__cell vigilance-table__cell--action">
                             {item.estado === "salio" ? (
                               <span className="row-action row-action--done">Salida registrada</span>
                             ) : (
