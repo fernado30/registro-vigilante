@@ -165,6 +165,8 @@ function SidebarLink({ to, label, icon, end = false }) {
     <NavLink
       to={to}
       end={end}
+      title={label}
+      aria-label={label}
       className={({ isActive }) =>
         `app-shell__nav-link ${isActive ? "app-shell__nav-link--active" : ""}`
       }
@@ -197,21 +199,27 @@ export default function AppShell({ children }) {
           <div className="app-shell__brand-mark">
             <BrandMark />
           </div>
-          <div>
+          <div className="app-shell__brand-copy">
             <p className="app-shell__brand-kicker">Vigilancia Pro</p>
             <h2 className="app-shell__brand-title">Panel operativo</h2>
           </div>
         </div>
 
         <div className="app-shell__session">
-          <span className="app-shell__session-label">Sesión activa</span>
-          <strong className="app-shell__session-name">{vigilanteName || "Sin asignar"}</strong>
-          <span className={`app-shell__role-badge ${isAdmin ? "app-shell__role-badge--admin" : ""}`}>
-            {isAdmin ? "Administrador" : "Vigilante"}
-          </span>
+          <div className="app-shell__session-copy">
+            <span className="app-shell__session-label">Sesion activa</span>
+            <strong className="app-shell__session-name">{vigilanteName || "Sin asignar"}</strong>
+            <span
+              className={`app-shell__role-badge ${
+                isAdmin ? "app-shell__role-badge--admin" : ""
+              }`}
+            >
+              {isAdmin ? "Administrador" : "Vigilante"}
+            </span>
+          </div>
         </div>
 
-        <nav className="app-shell__nav" aria-label="Navegación principal">
+        <nav className="app-shell__nav" aria-label="Navegacion principal">
           <div className="app-shell__nav-group">
             <span className="app-shell__section-label">Principal</span>
             {commonNav.map((item) => (
@@ -230,11 +238,17 @@ export default function AppShell({ children }) {
         </nav>
 
         <div className="app-shell__footer">
-          <button className="app-shell__logout" type="button" onClick={handleLogout}>
+          <button
+            className="app-shell__logout"
+            type="button"
+            onClick={handleLogout}
+            title="Cerrar sesion"
+            aria-label="Cerrar sesion"
+          >
             <span className="app-shell__nav-link-icon" aria-hidden="true">
               <LogoutIcon />
             </span>
-            <span className="app-shell__nav-link-text">Cerrar sesión</span>
+            <span className="app-shell__nav-link-text">Cerrar sesion</span>
           </button>
         </div>
       </aside>
