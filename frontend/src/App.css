@@ -1027,11 +1027,11 @@
 .grid-dashboard {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 18px;
+  gap: 14px;
 }
 
 .panel {
-  padding: 22px;
+  padding: 20px;
 }
 
 .panel--wide {
@@ -1049,12 +1049,12 @@
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  margin-bottom: 18px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
 .stat-card {
-  padding: 20px;
+  padding: 18px;
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.7);
@@ -1096,7 +1096,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 14px;
 }
 
 .recent-item {
@@ -1587,14 +1587,14 @@
 
 .history-panel {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .history-panel__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
+  gap: 14px;
 }
 
 .history-note {
@@ -1605,7 +1605,7 @@
 .history-filters {
   display: grid;
   grid-template-columns: minmax(180px, 220px) minmax(0, 1fr) minmax(220px, 260px);
-  gap: 14px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -1628,7 +1628,7 @@
 }
 
 .history-table__meta {
-  padding: 18px 22px 0;
+  padding: 16px 18px 0;
   color: #64748b;
   font-size: 0.95rem;
   display: flex;
@@ -1650,7 +1650,7 @@
 }
 
 .history-table thead th {
-  padding: 16px 22px;
+  padding: 14px 18px;
   text-align: left;
   color: #64748b;
   font-size: 0.85rem;
@@ -1660,7 +1660,7 @@
 }
 
 .history-table tbody td {
-  padding: 18px 22px;
+  padding: 16px 18px;
   vertical-align: middle;
   border-bottom: 1px solid rgba(226, 232, 240, 0.9);
   color: #334155;
@@ -1685,7 +1685,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 18px 22px 22px;
+  padding: 16px 18px 18px;
 }
 
 .history-pagination__info {
@@ -1796,7 +1796,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 14px;
   background:
     radial-gradient(circle at top right, rgba(214, 244, 247, 0.92), transparent 32%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.85));
@@ -1848,7 +1848,7 @@
 
 .admin-toolbar {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .admin-toolbar__filters {
@@ -1878,8 +1878,8 @@
 
 .admin-grid {
   display: grid;
-  gap: 18px;
-  margin-top: 18px;
+  gap: 14px;
+  margin-top: 14px;
 }
 
 .admin-grid--two {
@@ -1888,7 +1888,7 @@
 
 .admin-section {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .section-head {
@@ -1904,13 +1904,13 @@
 
 .admin-bars {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .report-bar {
   display: grid;
-  gap: 8px;
-  padding: 14px 16px;
+  gap: 6px;
+  padding: 12px 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(148, 163, 184, 0.22);
@@ -2065,19 +2065,19 @@
 .panels-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  margin-bottom: 18px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
 .chart-panel {
-  padding: 22px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
 }
 
 .chart-container {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .chart-label {
@@ -2089,7 +2089,7 @@
 
 .chart-bars {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .chart-bar-item {
@@ -2125,15 +2125,15 @@
 }
 
 .chart-empty {
-  padding: 28px;
+  padding: 22px;
   text-align: center;
   color: #94a3b8;
   font-size: 0.95rem;
 }
 
 .data-table-header {
-  margin-bottom: 18px;
-  padding-bottom: 14px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.6);
 }
 
@@ -2219,11 +2219,11 @@
 }
 
 .report-summary-panel {
-  padding: 18px;
+  padding: 16px;
 }
 
 .report-summary__header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   align-items: center;
 }
 
@@ -2231,7 +2231,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 0;
-  padding: 18px;
+  padding: 16px;
   border-radius: 24px;
   border: 1px solid rgba(191, 219, 254, 0.56);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 252, 255, 0.92));
@@ -2244,8 +2244,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 8px;
-  padding: 16px;
+  gap: 6px;
+  padding: 14px;
   border-radius: 20px;
   background: linear-gradient(135deg, rgba(223, 231, 255, 0.48), rgba(221, 246, 244, 0.5));
   border: 1px solid rgba(191, 219, 254, 0.4);
@@ -2277,11 +2277,11 @@
 .report-summary-card__metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .report-summary-metric {
-  padding: 16px 16px 15px;
+  padding: 14px 14px 13px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(191, 219, 254, 0.5);
@@ -2330,7 +2330,7 @@
   }
 
   .report-summary-panel {
-    padding: 18px;
+    padding: 14px;
   }
 
   .report-summary-card {
@@ -2351,7 +2351,7 @@
 
   .data-table thead th,
   .data-table tbody td {
-    padding: 12px 14px;
+    padding: 11px 13px;
     font-size: 0.85rem;
   }
 
