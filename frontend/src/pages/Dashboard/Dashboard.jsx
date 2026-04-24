@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useState, useContext } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../../services/api";
-import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../../context/auth-context";
 import AppShell from "../../components/AppShell";
 import { getTipoVisitaClass, getTipoVisitaLabel } from "../../utils/ingresos";
 
@@ -46,8 +44,6 @@ function formatTime(value) {
 }
 
 export default function Dashboard() {
-  const { logout, isAdmin } = useContext(AuthContext);
-  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -151,11 +147,6 @@ export default function Dashboard() {
       });
   }, [data, searchTerm]);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
-  };
-
   const handleSalida = async (id) => {
     setUpdatingId(id);
 
@@ -203,27 +194,6 @@ export default function Dashboard() {
               <h1 className="brand__title">Panel de vigilancia</h1>
               <p className="brand__subtitle">Residencial Los Pinos</p>
             </div>
-          </div>
-
-          <div className="top-actions">
-            <span className="pill">
-              <span className="pill__dot" />
-              Turno activo
-            </span>
-            {isAdmin ? (
-              <button className="button button--ghost" onClick={() => navigate("/admin")}>
-                Administrador
-              </button>
-            ) : null}
-            <button className="button button--ghost" onClick={() => navigate("/ingresos")}>
-              Nuevo ingreso
-            </button>
-            <button className="button button--ghost" onClick={() => navigate("/historial")}>
-              Historial
-            </button>
-            <button className="button button--soft" onClick={handleLogout}>
-              Cerrar sesion
-            </button>
           </div>
         </header>
 

@@ -1,6 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../../context/auth-context";
+import { useEffect, useMemo, useState } from "react";
 import AppShell from "../../components/AppShell";
 import { api } from "../../services/api";
 import { getTipoVisitaClass, getTipoVisitaLabel } from "../../utils/ingresos";
@@ -162,8 +160,6 @@ function getPercent(value, total) {
 }
 
 export default function Admin() {
-  const { logout } = useContext(AuthContext);
-  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -374,11 +370,6 @@ export default function Admin() {
     ];
   }, [shifts]);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
-  };
-
   const handleResetFilters = () => {
     setSearchTerm("");
     setDateFrom(getDateOffset(7));
@@ -510,24 +501,6 @@ export default function Admin() {
               <h1 className="brand__title">Administrador</h1>
               <p className="brand__subtitle">Reportes, analitica y organizacion de turnos</p>
             </div>
-          </div>
-
-          <div className="top-actions">
-            <button className="button button--ghost" onClick={() => navigate("/reportes")}>
-              Reportes
-            </button>
-            <button className="button button--ghost" onClick={() => navigate("/dashboard")}>
-              Dashboard
-            </button>
-            <button className="button button--ghost" onClick={() => navigate("/historial")}>
-              Historial
-            </button>
-            <button className="button button--ghost" onClick={() => navigate("/ingresos")}>
-              Ingresos
-            </button>
-            <button className="button button--soft" onClick={handleLogout}>
-              Cerrar sesion
-            </button>
           </div>
         </header>
 

@@ -1,6 +1,5 @@
 import { useState, useContext } from "react";
 import { api } from "../../services/api";
-import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
 import { getVigilanteName } from "../../utils/ingresos";
 import AppShell from "../../components/AppShell";
@@ -10,10 +9,7 @@ export default function Ingresos() {
     user,
     vigilanteName: sessionVigilanteName,
     authReady,
-    logout,
-    isAdmin,
   } = useContext(AuthContext);
-  const navigate = useNavigate();
   const vigilanteName = authReady ? sessionVigilanteName || getVigilanteName(user) : "Cargando...";
   const currentTime = new Date().toLocaleTimeString("es-CO", {
     hour: "2-digit",
@@ -86,29 +82,6 @@ export default function Ingresos() {
               <h1 className="brand__title">Registrar ingreso</h1>
               <p className="brand__subtitle">Formulario moderno con tonos suaves</p>
             </div>
-          </div>
-
-          <div className="top-actions">
-            {isAdmin ? (
-              <button className="button button--ghost" onClick={() => navigate("/admin")}>
-                Administrador
-              </button>
-            ) : null}
-            <button className="button button--ghost" onClick={() => navigate("/historial")}>
-              Ver historial
-            </button>
-            <button className="button button--ghost" onClick={() => navigate("/dashboard")}>
-              Volver al dashboard
-            </button>
-            <button
-              className="button button--soft"
-              onClick={async () => {
-                await logout();
-                navigate("/");
-              }}
-            >
-              Cerrar sesion
-            </button>
           </div>
         </header>
 

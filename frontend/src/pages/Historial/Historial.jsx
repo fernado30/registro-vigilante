@@ -1,5 +1,4 @@
 import { useContext, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
 import AppShell from "../../components/AppShell";
 import { api } from "../../services/api";
@@ -83,8 +82,7 @@ function buildPageItems(currentPage, totalPages) {
 }
 
 export default function Historial() {
-  const { user, logout, isAdmin } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(getTodayValue());
@@ -171,29 +169,6 @@ export default function Historial() {
               <h1 className="brand__title">Historial</h1>
               <p className="brand__subtitle">{getVigilanteName(user)}</p>
             </div>
-          </div>
-
-          <div className="top-actions">
-            {isAdmin ? (
-              <button className="button button--ghost" onClick={() => navigate("/admin")}>
-                Administrador
-              </button>
-            ) : null}
-            <button className="button button--ghost" onClick={() => navigate("/dashboard")}>
-              Dashboard
-            </button>
-            <button className="button button--ghost" onClick={() => navigate("/ingresos")}>
-              Nuevo ingreso
-            </button>
-            <button
-              className="button button--soft"
-              onClick={async () => {
-                await logout();
-                navigate("/");
-              }}
-            >
-              Cerrar sesion
-            </button>
           </div>
         </header>
 
