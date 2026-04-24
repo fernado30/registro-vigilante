@@ -8,31 +8,35 @@
 .app-shell {
   display: flex;
   min-height: 100vh;
+  padding: 24px;
+  gap: 24px;
   background:
-    radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.18), transparent 24%),
-    radial-gradient(circle at 100% 15%, rgba(34, 197, 94, 0.16), transparent 18%),
-    linear-gradient(180deg, #050607 0%, #070b09 100%);
-  color: #eef2f0;
+    radial-gradient(circle at 14% 8%, rgba(109, 141, 255, 0.16), transparent 24%),
+    radial-gradient(circle at 86% 12%, rgba(118, 216, 204, 0.14), transparent 18%),
+    linear-gradient(180deg, #f8fbff 0%, #eef6fb 100%);
+  color: #1f2937;
 }
 
 .app-shell__sidebar {
   position: sticky;
-  top: 0;
-  width: 292px;
-  height: 100vh;
-  flex: 0 0 292px;
+  top: 24px;
+  align-self: flex-start;
+  width: 300px;
+  height: calc(100vh - 48px);
+  flex: 0 0 300px;
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: 26px 18px 18px;
-  border-right: 1px solid rgba(34, 197, 94, 0.14);
+  padding: 22px 18px 18px;
+  border-radius: 30px;
+  border: 1px solid rgba(191, 219, 254, 0.72);
   background:
-    linear-gradient(180deg, rgba(4, 10, 8, 0.92), rgba(3, 6, 5, 0.98)),
-    radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.14), transparent 28%);
-  backdrop-filter: blur(26px);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(240, 249, 255, 0.76)),
+    radial-gradient(circle at 50% 0%, rgba(109, 141, 255, 0.08), transparent 28%);
+  backdrop-filter: blur(24px);
   box-shadow:
-    inset -1px 0 0 rgba(255, 255, 255, 0.02),
-    18px 0 70px rgba(0, 0, 0, 0.3);
+    0 22px 60px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   overflow: hidden;
   z-index: 3;
 }
@@ -41,8 +45,9 @@
   content: "";
   position: absolute;
   inset: 12px;
-  border-radius: 28px;
-  border: 1px solid rgba(34, 197, 94, 0.08);
+  border-radius: 24px;
+  border: 1px solid rgba(191, 219, 254, 0.38);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 38%);
   pointer-events: none;
 }
 
@@ -55,19 +60,19 @@
 }
 
 .app-shell__orb--one {
-  width: 220px;
-  height: 220px;
-  left: -120px;
-  top: 44px;
-  background: radial-gradient(circle, rgba(34, 197, 94, 0.36), rgba(34, 197, 94, 0));
+  width: 210px;
+  height: 210px;
+  left: -110px;
+  top: 42px;
+  background: radial-gradient(circle, rgba(109, 141, 255, 0.28), rgba(109, 141, 255, 0));
 }
 
 .app-shell__orb--two {
   width: 180px;
   height: 180px;
-  right: -90px;
-  top: 220px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.28), rgba(16, 185, 129, 0));
+  right: -92px;
+  top: 210px;
+  background: radial-gradient(circle, rgba(118, 216, 204, 0.22), rgba(118, 216, 204, 0));
 }
 
 .app-shell__orb--three {
@@ -75,7 +80,7 @@
   height: 160px;
   left: 26px;
   bottom: -56px;
-  background: radial-gradient(circle, rgba(74, 222, 128, 0.24), rgba(74, 222, 128, 0));
+  background: radial-gradient(circle, rgba(255, 214, 191, 0.22), rgba(255, 214, 191, 0));
 }
 
 .app-shell__brand {
@@ -93,11 +98,11 @@
   border-radius: 18px;
   display: grid;
   place-items: center;
-  color: #00140b;
-  background: linear-gradient(135deg, #d9ffe9, #22c55e 56%, #16a34a);
+  color: white;
+  background: linear-gradient(135deg, var(--primary-strong), var(--mint));
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.16),
-    0 18px 40px rgba(34, 197, 94, 0.28);
+    0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 18px 40px rgba(82, 114, 255, 0.18);
 }
 
 .app-shell__brand-icon {
@@ -107,7 +112,7 @@
 
 .app-shell__brand-kicker {
   margin: 0;
-  color: rgba(190, 255, 220, 0.72);
+  color: var(--muted);
   font-size: 0.78rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -117,7 +122,7 @@
   margin: 4px 0 0;
   font-size: 1.18rem;
   line-height: 1.05;
-  color: #f0fdf4;
+  color: #1f2937;
 }
 
 .app-shell__session {
@@ -126,17 +131,17 @@
   margin: 0 6px;
   padding: 16px 16px 14px;
   border-radius: 22px;
-  border: 1px solid rgba(34, 197, 94, 0.12);
-  background: linear-gradient(180deg, rgba(9, 15, 12, 0.84), rgba(7, 10, 8, 0.94));
+  border: 1px solid rgba(191, 219, 254, 0.56);
+  background: rgba(255, 255, 255, 0.72);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 18px 38px rgba(0, 0, 0, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 18px 38px rgba(15, 23, 42, 0.08);
 }
 
 .app-shell__session-label {
   display: block;
   margin-bottom: 6px;
-  color: rgba(190, 255, 220, 0.72);
+  color: var(--muted);
   font-size: 0.78rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -145,7 +150,7 @@
 .app-shell__session-name {
   display: block;
   font-size: 1rem;
-  color: #f8fafc;
+  color: #1f2937;
 }
 
 .app-shell__role-badge {
@@ -154,16 +159,16 @@
   margin-top: 10px;
   padding: 7px 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(226, 255, 237, 0.88);
+  background: rgba(109, 141, 255, 0.1);
+  border: 1px solid rgba(109, 141, 255, 0.16);
+  color: #3653c7;
   font-size: 0.82rem;
 }
 
 .app-shell__role-badge--admin {
-  background: rgba(34, 197, 94, 0.16);
-  border-color: rgba(34, 197, 94, 0.24);
-  color: #dcfce7;
+  background: rgba(118, 216, 204, 0.14);
+  border-color: rgba(118, 216, 204, 0.18);
+  color: #0f766e;
 }
 
 .app-shell__nav {
@@ -184,7 +189,7 @@
 
 .app-shell__section-label {
   padding: 0 10px;
-  color: rgba(190, 255, 220, 0.52);
+  color: var(--muted);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -200,8 +205,9 @@
   padding: 13px 14px;
   border-radius: 18px;
   border: 1px solid transparent;
-  color: rgba(237, 253, 243, 0.76);
-  background: rgba(255, 255, 255, 0.02);
+  color: #334155;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   transition:
     transform 160ms ease,
     background 160ms ease,
@@ -213,19 +219,19 @@
 .app-shell__nav-link:hover,
 .app-shell__logout:hover {
   transform: translateY(-1px);
-  color: #f8fafc;
-  background: rgba(34, 197, 94, 0.08);
-  border-color: rgba(34, 197, 94, 0.14);
-  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18);
+  color: #1f2937;
+  background: rgba(239, 246, 255, 0.96);
+  border-color: rgba(191, 219, 254, 0.72);
+  box-shadow: 0 16px 28px rgba(148, 163, 184, 0.14);
 }
 
 .app-shell__nav-link--active {
-  color: #00140b;
-  background: linear-gradient(135deg, #c8ffe0 0%, #22c55e 56%, #16a34a 100%);
-  border-color: rgba(255, 255, 255, 0.12);
+  color: white;
+  background: linear-gradient(135deg, var(--primary-strong), #7d8dff 55%, var(--mint));
+  border-color: transparent;
   box-shadow:
-    0 18px 28px rgba(34, 197, 94, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    0 18px 28px rgba(82, 114, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .app-shell__nav-link-icon {
@@ -253,19 +259,21 @@
 
 .app-shell__logout {
   justify-content: flex-start;
-  color: rgba(220, 255, 232, 0.82);
+  color: #334155;
 }
 
 .app-shell__content {
   position: relative;
   flex: 1;
   min-width: 0;
-  padding: 24px;
+  padding: 0;
 }
 
 @media (max-width: 1120px) {
   .app-shell {
     flex-direction: column;
+    padding: 16px;
+    gap: 16px;
   }
 
   .app-shell__sidebar {
@@ -273,8 +281,7 @@
     height: auto;
     flex-basis: auto;
     position: relative;
-    border-right: 0;
-    border-bottom: 1px solid rgba(34, 197, 94, 0.14);
+    top: 0;
   }
 
   .app-shell__nav {
@@ -284,7 +291,7 @@
 
 @media (max-width: 720px) {
   .app-shell__content {
-    padding: 16px;
+    padding: 0;
   }
 
   .app-shell__sidebar {
