@@ -591,9 +591,6 @@ export default function Reportes() {
                 Toda la informacion clave del periodo en una sola tarjeta bien organizada.
               </p>
             </div>
-            <div className="mini-note admin-mini-note">
-              <strong>Total:</strong> {reportRows.length} ingresos filtrados
-            </div>
           </div>
 
           <div className="report-summary-card">
