@@ -3,6 +3,7 @@ import { api } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
 import { getVigilanteName } from "../../utils/ingresos";
+import AppShell from "../../components/AppShell";
 
 export default function Ingresos() {
   const {
@@ -69,7 +70,8 @@ export default function Ingresos() {
   };
 
   return (
-    <main className="app-page">
+    <AppShell>
+      <main className="app-page">
       <div className="app-page__backdrop" aria-hidden="true">
         <span className="app-page__orb app-page__orb--one" />
         <span className="app-page__orb app-page__orb--two" />
@@ -248,12 +250,13 @@ export default function Ingresos() {
               </div>
 
               <button className="button button--primary" type="submit" disabled={saving}>
-                {saving ? "Guardando..." : "Guardar ingreso"}
-              </button>
-            </form>
-          </article>
-        </section>
+              {saving ? "Guardando..." : "Guardar ingreso"}
+            </button>
+          </form>
+        </article>
+      </section>
       </div>
-    </main>
+      </main>
+    </AppShell>
   );
 }

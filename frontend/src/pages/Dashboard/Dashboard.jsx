@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useContext } from "react";
 import { api } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
+import AppShell from "../../components/AppShell";
 import { getTipoVisitaClass, getTipoVisitaLabel } from "../../utils/ingresos";
 
 function SearchIcon() {
@@ -186,7 +187,8 @@ export default function Dashboard() {
   });
 
   return (
-    <main className="app-page">
+    <AppShell>
+      <main className="app-page">
       <div className="app-page__backdrop" aria-hidden="true">
         <span className="app-page__orb app-page__orb--one" />
         <span className="app-page__orb app-page__orb--two" />
@@ -372,6 +374,7 @@ export default function Dashboard() {
           </article>
         </section>
       </div>
-    </main>
+      </main>
+    </AppShell>
   );
 }

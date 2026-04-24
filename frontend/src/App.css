@@ -5,6 +5,306 @@
   overflow: hidden;
 }
 
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.18), transparent 24%),
+    radial-gradient(circle at 100% 15%, rgba(34, 197, 94, 0.16), transparent 18%),
+    linear-gradient(180deg, #050607 0%, #070b09 100%);
+  color: #eef2f0;
+}
+
+.app-shell__sidebar {
+  position: sticky;
+  top: 0;
+  width: 292px;
+  height: 100vh;
+  flex: 0 0 292px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px 18px 18px;
+  border-right: 1px solid rgba(34, 197, 94, 0.14);
+  background:
+    linear-gradient(180deg, rgba(4, 10, 8, 0.92), rgba(3, 6, 5, 0.98)),
+    radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.14), transparent 28%);
+  backdrop-filter: blur(26px);
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.02),
+    18px 0 70px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  z-index: 3;
+}
+
+.app-shell__sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 28px;
+  border: 1px solid rgba(34, 197, 94, 0.08);
+  pointer-events: none;
+}
+
+.app-shell__orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(16px);
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.app-shell__orb--one {
+  width: 220px;
+  height: 220px;
+  left: -120px;
+  top: 44px;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.36), rgba(34, 197, 94, 0));
+}
+
+.app-shell__orb--two {
+  width: 180px;
+  height: 180px;
+  right: -90px;
+  top: 220px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.28), rgba(16, 185, 129, 0));
+}
+
+.app-shell__orb--three {
+  width: 160px;
+  height: 160px;
+  left: 26px;
+  bottom: -56px;
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.24), rgba(74, 222, 128, 0));
+}
+
+.app-shell__brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 8px 6px;
+}
+
+.app-shell__brand-mark {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: #00140b;
+  background: linear-gradient(135deg, #d9ffe9, #22c55e 56%, #16a34a);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 18px 40px rgba(34, 197, 94, 0.28);
+}
+
+.app-shell__brand-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.app-shell__brand-kicker {
+  margin: 0;
+  color: rgba(190, 255, 220, 0.72);
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.app-shell__brand-title {
+  margin: 4px 0 0;
+  font-size: 1.18rem;
+  line-height: 1.05;
+  color: #f0fdf4;
+}
+
+.app-shell__session {
+  position: relative;
+  z-index: 1;
+  margin: 0 6px;
+  padding: 16px 16px 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(34, 197, 94, 0.12);
+  background: linear-gradient(180deg, rgba(9, 15, 12, 0.84), rgba(7, 10, 8, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 38px rgba(0, 0, 0, 0.18);
+}
+
+.app-shell__session-label {
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(190, 255, 220, 0.72);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.app-shell__session-name {
+  display: block;
+  font-size: 1rem;
+  color: #f8fafc;
+}
+
+.app-shell__role-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(226, 255, 237, 0.88);
+  font-size: 0.82rem;
+}
+
+.app-shell__role-badge--admin {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.24);
+  color: #dcfce7;
+}
+
+.app-shell__nav {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 16px;
+  padding: 0 6px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 197, 94, 0.5) transparent;
+}
+
+.app-shell__nav-group {
+  display: grid;
+  gap: 10px;
+}
+
+.app-shell__section-label {
+  padding: 0 10px;
+  color: rgba(190, 255, 220, 0.52);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.app-shell__nav-link,
+.app-shell__logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 18px;
+  border: 1px solid transparent;
+  color: rgba(237, 253, 243, 0.76);
+  background: rgba(255, 255, 255, 0.02);
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.app-shell__nav-link:hover,
+.app-shell__logout:hover {
+  transform: translateY(-1px);
+  color: #f8fafc;
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.14);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18);
+}
+
+.app-shell__nav-link--active {
+  color: #00140b;
+  background: linear-gradient(135deg, #c8ffe0 0%, #22c55e 56%, #16a34a 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 18px 28px rgba(34, 197, 94, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.app-shell__nav-link-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.app-shell__nav-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.app-shell__nav-link-text {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.app-shell__footer {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  padding: 8px 6px 0;
+}
+
+.app-shell__logout {
+  justify-content: flex-start;
+  color: rgba(220, 255, 232, 0.82);
+}
+
+.app-shell__content {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 24px;
+}
+
+@media (max-width: 1120px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-shell__sidebar {
+    width: 100%;
+    height: auto;
+    flex-basis: auto;
+    position: relative;
+    border-right: 0;
+    border-bottom: 1px solid rgba(34, 197, 94, 0.14);
+  }
+
+  .app-shell__nav {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell__content {
+    padding: 16px;
+  }
+
+  .app-shell__sidebar {
+    padding-inline: 14px;
+  }
+
+  .app-shell__nav {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell__brand {
+    align-items: flex-start;
+  }
+
+  .app-shell__nav-link,
+  .app-shell__logout {
+    border-radius: 16px;
+  }
+}
+
 .login-page {
   position: relative;
   isolation: isolate;

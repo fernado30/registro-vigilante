@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
+import AppShell from "../../components/AppShell";
 import { api } from "../../services/api";
 import { getTipoVisitaClass, getTipoVisitaLabel } from "../../utils/ingresos";
 import { downloadStructuredReportPdf } from "../../utils/pdfReport";
@@ -491,7 +492,8 @@ export default function Admin() {
   };
 
   return (
-    <main className="app-page admin-page">
+    <AppShell>
+      <main className="app-page admin-page">
       <div className="app-page__backdrop" aria-hidden="true">
         <span className="app-page__orb app-page__orb--one" />
         <span className="app-page__orb app-page__orb--two" />
@@ -1047,6 +1049,7 @@ export default function Admin() {
           </article>
         </section>
       </div>
-    </main>
+      </main>
+    </AppShell>
   );
 }

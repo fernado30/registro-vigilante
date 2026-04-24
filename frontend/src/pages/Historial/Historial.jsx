@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
+import AppShell from "../../components/AppShell";
 import { api } from "../../services/api";
 import {
   getTipoVisitaClass,
@@ -154,7 +155,8 @@ export default function Historial() {
   }, [data]);
 
   return (
-    <main className="app-page">
+    <AppShell>
+      <main className="app-page">
       <div className="app-page__backdrop" aria-hidden="true">
         <span className="app-page__orb app-page__orb--one" />
         <span className="app-page__orb app-page__orb--two" />
@@ -364,6 +366,7 @@ export default function Historial() {
           )}
         </section>
       </div>
-    </main>
+      </main>
+    </AppShell>
   );
 }
