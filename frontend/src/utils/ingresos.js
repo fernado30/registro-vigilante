@@ -93,7 +93,9 @@ export function getPagoAdministracionVencimientoEstado(item, referenceDate = new
     };
   }
 
-  if (!item?.fecha_pago_administracion) {
+  const sourceDate = item?.fecha_pago_administracion || item?.fecha_ingreso;
+
+  if (!sourceDate) {
     return {
       label: "Sin pago",
       tone: "muted",
@@ -103,7 +105,7 @@ export function getPagoAdministracionVencimientoEstado(item, referenceDate = new
     };
   }
 
-  const dueDate = getPagoAdministracionVencimiento(item.fecha_pago_administracion);
+  const dueDate = getPagoAdministracionVencimiento(sourceDate);
   if (!dueDate) {
     return {
       label: "Sin vencimiento",
