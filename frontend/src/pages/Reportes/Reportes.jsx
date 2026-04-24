@@ -57,6 +57,29 @@ function formatDuration(minutes) {
   return `${hours} h ${rest.toString().padStart(2, "0")} min`;
 }
 
+function buildPageItems(currentPage, totalPages) {
+  if (totalPages <= 1) return [1];
+
+  const pageSet = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+  const pages = Array.from(pageSet)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+
+  const items = [];
+
+  pages.forEach((page, index) => {
+    const previous = pages[index - 1];
+
+    if (typeof previous === "number" && page - previous > 1) {
+      items.push("ellipsis");
+    }
+
+    items.push(page);
+  });
+
+  return items;
+}
+
 function ChartIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-badge__icon">
@@ -139,6 +162,8 @@ export default function Reportes() {
   const [selectedType, setSelectedType] = useState("todos");
   const [selectedVigilante, setSelectedVigilante] = useState("todos");
   const [selectedEstado, setSelectedEstado] = useState("todos");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     if (!isAdmin) {
@@ -233,6 +258,14 @@ export default function Reportes() {
     selectedVigilante,
     selectedEstado,
   ]);
+
+  const totalPages = Math.max(1, Math.ceil(reportRows.length / pageSize));
+  const effectiveCurrentPage = Math.min(currentPage, totalPages);
+  const pageStartIndex = (effectiveCurrentPage - 1) * pageSize;
+  const visibleRows = reportRows.slice(pageStartIndex, pageStartIndex + pageSize);
+  const pageStart = reportRows.length > 0 ? pageStartIndex + 1 : 0;
+  const pageEnd = Math.min(pageStartIndex + pageSize, reportRows.length);
+  const pageItems = buildPageItems(effectiveCurrentPage, totalPages);
 
   const typeOptions = useMemo(() => {
     const types = new Set();
@@ -447,6 +480,7 @@ export default function Reportes() {
     setSelectedType("todos");
     setSelectedVigilante("todos");
     setSelectedEstado("todos");
+    setCurrentPage(1);
   };
 
   if (loading) {
@@ -539,7 +573,10 @@ export default function Reportes() {
                 className="input"
                 type="date"
                 value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
             <div className="field-group">
@@ -551,7 +588,10 @@ export default function Reportes() {
                 className="input"
                 type="date"
                 value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
             <div className="field-group">
@@ -562,7 +602,10 @@ export default function Reportes() {
                 id="report-type"
                 className="select"
                 value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
+                onChange={(e) => {
+                  setSelectedType(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
                 {typeOptions.map((type) => (
                   <option key={type} value={type}>
@@ -579,7 +622,10 @@ export default function Reportes() {
                 id="report-vigilante"
                 className="select"
                 value={selectedVigilante}
-                onChange={(e) => setSelectedVigilante(e.target.value)}
+                onChange={(e) => {
+                  setSelectedVigilante(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
                 <option value="todos">Todos los vigilantes</option>
                 {vigilantes.map((vigilante) => (
@@ -597,7 +643,10 @@ export default function Reportes() {
                 id="report-estado"
                 className="select"
                 value={selectedEstado}
-                onChange={(e) => setSelectedEstado(e.target.value)}
+                onChange={(e) => {
+                  setSelectedEstado(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
                 <option value="todos">Todos los estados</option>
                 <option value="adentro">Adentro</option>
@@ -616,7 +665,10 @@ export default function Reportes() {
                 type="search"
                 placeholder="Buscar por nombre, documento, apto, placa o vigilante"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
             <div className="admin-toolbar__actions">
@@ -655,9 +707,14 @@ export default function Reportes() {
               Registros filtrados ({reportRows.length})
             </h3>
             <p className="data-table-subtitle">
-              Mostrando todos los ingresos que coinciden con los filtros
-              aplicados
+              Mostrando 10 ingresos por pagina con navegacion tipo libro.
             </p>
+            <div className="history-table__meta" style={{ padding: "12px 0 0" }}>
+              <span>{reportRows.length} registros</span>
+              <span className="history-table__meta-detail">
+                Mostrando {pageStart}-{pageEnd} de {reportRows.length}
+              </span>
+            </div>
           </div>
 
           {reportRows.length === 0 ? (
@@ -681,7 +738,7 @@ export default function Reportes() {
                   </tr>
                 </thead>
                 <tbody>
-                  {reportRows.map((item) => (
+                  {visibleRows.map((item) => (
                     <tr key={item.id} className="data-row">
                       <td className="table-cell">
                         <span className="table-value">
@@ -740,6 +797,58 @@ export default function Reportes() {
               </table>
             </div>
           )}
+
+          {reportRows.length > 0 ? (
+            <div className="history-pagination" style={{ paddingInline: 0, paddingBottom: 0 }}>
+              <div className="history-pagination__info">
+                Pagina <strong>{effectiveCurrentPage}</strong> de <strong>{totalPages}</strong>
+              </div>
+
+              <div className="history-pagination__controls" aria-label="Paginacion del reporte">
+                <button
+                  type="button"
+                  className="history-pagination__button"
+                  onClick={() =>
+                    setCurrentPage((page) => Math.max(1, Math.min(totalPages, page - 1)))
+                  }
+                  disabled={effectiveCurrentPage === 1}
+                >
+                  Anterior
+                </button>
+
+                {pageItems.map((item, index) =>
+                  item === "ellipsis" ? (
+                    <span key={`ellipsis-${index}`} className="history-pagination__ellipsis">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`history-pagination__button ${
+                        item === effectiveCurrentPage ? "history-pagination__button--active" : ""
+                      }`}
+                      onClick={() => setCurrentPage(item)}
+                      aria-current={item === effectiveCurrentPage ? "page" : undefined}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+
+                <button
+                  type="button"
+                  className="history-pagination__button"
+                  onClick={() =>
+                    setCurrentPage((page) => Math.min(totalPages, Math.max(1, page + 1)))
+                  }
+                  disabled={effectiveCurrentPage === totalPages}
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          ) : null}
         </section>
       </div>
     </main>
