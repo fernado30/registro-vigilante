@@ -1872,7 +1872,7 @@ body,
 
 .history-filters {
   display: grid;
-  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr) minmax(220px, 260px);
+  grid-template-columns: minmax(160px, 180px) minmax(160px, 180px) minmax(0, 1fr) minmax(220px, 260px);
   gap: 14px;
   align-items: center;
 }

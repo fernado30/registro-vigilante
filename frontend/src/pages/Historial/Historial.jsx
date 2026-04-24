@@ -40,6 +40,15 @@ function getTodayValue() {
   return `${year}-${month}-${day}`;
 }
 
+function getDateOffset(days) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function formatTime(value) {
   if (!value) return "--:--";
 
@@ -49,15 +58,17 @@ function formatTime(value) {
   }).format(new Date(value));
 }
 
-function sameCalendarDate(isoValue, dateValue) {
-  if (!isoValue || !dateValue) return true;
+function getDateKey(value) {
+  if (!value) return "";
 
-  const value = new Date(isoValue);
-  const year = value.getFullYear();
-  const month = `${value.getMonth() + 1}`.padStart(2, "0");
-  const day = `${value.getDate()}`.padStart(2, "0");
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
 
-  return `${year}-${month}-${day}` === dateValue;
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function buildPageItems(currentPage, totalPages) {
@@ -87,7 +98,8 @@ export default function Historial() {
   const { user } = useContext(AuthContext);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(getTodayValue());
+  const [dateFrom, setDateFrom] = useState(getDateOffset(7));
+  const [dateTo, setDateTo] = useState(getTodayValue());
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("todos");
   const [currentPage, setCurrentPage] = useState(1);
@@ -117,7 +129,9 @@ export default function Historial() {
 
     return data.filter((item) => {
       const type = `${item?.tipo_visita || ""}`.toLowerCase();
-      const matchesDate = sameCalendarDate(item?.fecha_ingreso, selectedDate);
+      const itemDate = getDateKey(item?.fecha_ingreso);
+      const matchesDate =
+        (!dateFrom || itemDate >= dateFrom) && (!dateTo || itemDate <= dateTo);
       const matchesType = selectedType === "todos" || type === selectedType;
       const haystack = [
         item?.nombre,
@@ -135,7 +149,7 @@ export default function Historial() {
 
       return matchesDate && matchesType && matchesSearch;
     });
-  }, [data, searchTerm, selectedDate, selectedType]);
+  }, [data, searchTerm, dateFrom, dateTo, selectedType]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const effectiveCurrentPage = Math.min(currentPage, totalPages);
@@ -180,11 +194,11 @@ export default function Historial() {
             <div>
               <h2 className="section-title">Historial de ingresos</h2>
               <p className="section-subtitle">
-                Consulta entradas, salidas, placas, apartamentos y vigilante responsable.
+                Consulta entradas, salidas, placas, apartamentos y vigilante responsable dentro del rango elegido.
               </p>
             </div>
             <div className="mini-note history-note">
-              <strong>Fecha:</strong> {selectedDate}
+              <strong>Rango:</strong> {dateFrom} a {dateTo}
               <span style={{ marginLeft: 12 }}>
                 <strong>Registros:</strong> {filteredRows.length}
               </span>
@@ -195,9 +209,18 @@ export default function Historial() {
             <input
               className="input"
               type="date"
-              value={selectedDate}
+              value={dateFrom}
               onChange={(e) => {
-                setSelectedDate(e.target.value);
+                setDateFrom(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <input
+              className="input"
+              type="date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value);
                 setCurrentPage(1);
               }}
             />
