@@ -85,6 +85,10 @@ function formatDateTime(value) {
   }).format(date);
 }
 
+function isProveedorVisita(tipo) {
+  return `${tipo || ""}`.trim().toLowerCase() === "proveedor";
+}
+
 export default function PagoAdministracion() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,12 +117,16 @@ export default function PagoAdministracion() {
     };
   }, []);
 
+  const providerRows = useMemo(() => {
+    return [...data]
+      .sort((a, b) => new Date(b?.fecha_ingreso || 0) - new Date(a?.fecha_ingreso || 0))
+      .filter((item) => isProveedorVisita(item?.tipo_visita));
+  }, [data]);
+
   const filteredRows = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
-    return [...data]
-      .sort((a, b) => new Date(b?.fecha_ingreso || 0) - new Date(a?.fecha_ingreso || 0))
-      .filter((item) => {
+    return providerRows.filter((item) => {
         const paid = isPagoAdministracionPagado(item?.pago_administracion);
         const matchesStatus =
           statusFilter === "todos" ||
@@ -141,7 +149,7 @@ export default function PagoAdministracion() {
 
         return matchesStatus && matchesSearch;
       });
-  }, [data, searchTerm, statusFilter]);
+  }, [providerRows, searchTerm, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const effectiveCurrentPage = Math.min(currentPage, totalPages);
@@ -170,7 +178,7 @@ export default function PagoAdministracion() {
   }, [filteredRows]);
 
   const summaryCards = [
-    { label: "Total registros", value: filteredRows.length, note: "Ingresos revisados" },
+    { label: "Total proveedores", value: filteredRows.length, note: "Ingresos revisados" },
     { label: "Pagados", value: pagados, note: "Con administracion al dia" },
     { label: "Pendientes", value: pendientes, note: "Aun sin confirmar" },
     { label: "Alertas", value: paymentAlerts.length, note: "Vence pronto o ya vencido" },
@@ -206,7 +214,7 @@ export default function PagoAdministracion() {
     downloadStructuredReportPdf({
       filename: `pago-administracion-${new Date().toISOString().slice(0, 10)}.pdf`,
       title: "Pago de administracion",
-      subtitle: "Informe de registros con estado de pago y fecha de confirmacion",
+      subtitle: "Informe de proveedores con estado de pago y fecha de confirmacion",
       metaLines: [
         `Generado: ${new Intl.DateTimeFormat("es-CO", {
           dateStyle: "medium",
@@ -228,6 +236,7 @@ export default function PagoAdministracion() {
                     ? "Pagados"
                     : "Pendientes",
             },
+            { label: "Tipo", value: "Proveedor" },
             { label: "Busqueda", value: searchTerm.trim() || "Sin filtro" },
           ],
         },
@@ -249,7 +258,7 @@ export default function PagoAdministracion() {
         },
       ],
       rows: filteredRows,
-      emptyMessage: "No hay registros de pago que coincidan con los filtros aplicados.",
+      emptyMessage: "No hay proveedores que coincidan con los filtros aplicados.",
     });
   };
 
@@ -402,7 +411,7 @@ export default function PagoAdministracion() {
               <div>
                 <h2 className="section-title">Registros de pago</h2>
                 <p className="section-subtitle">
-                  Revisa quién tiene el pago al día y actualiza el estado cuando corresponda.
+                  Revisa los proveedores con pago al día y actualiza el estado cuando corresponda.
                 </p>
               </div>
               <div className="mini-note admin-mini-note">
@@ -538,11 +547,11 @@ export default function PagoAdministracion() {
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="empty-state">
-                No hay ingresos que coincidan con los filtros aplicados.
-              </div>
-            )}
+          ) : (
+            <div className="empty-state">
+              No hay proveedores que coincidan con los filtros aplicados.
+            </div>
+          )}
           </section>
         </div>
       </main>
