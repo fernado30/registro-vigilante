@@ -89,6 +89,13 @@ function isProveedorVisita(tipo) {
   return `${tipo || ""}`.trim().toLowerCase() === "proveedor";
 }
 
+function getStatusFilterLabel(statusFilter) {
+  if (statusFilter === "pagado") return "Pagados";
+  if (statusFilter === "pendiente") return "Pendientes";
+  if (statusFilter === "vencido") return "Vencidos";
+  return "Todos";
+}
+
 export default function PagoAdministracion() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -127,11 +134,15 @@ export default function PagoAdministracion() {
     const query = searchTerm.trim().toLowerCase();
 
     return providerRows.filter((item) => {
-        const paid = isPagoAdministracionPagado(item?.pago_administracion);
-        const matchesStatus =
-          statusFilter === "todos" ||
-          (statusFilter === "pagado" && paid) ||
-          (statusFilter === "pendiente" && !paid);
+      const paid = isPagoAdministracionPagado(item?.pago_administracion);
+      const paymentStatus = getPagoAdministracionVencimientoEstado(item);
+      const isOverdue = !paid && paymentStatus.daysLeft !== null && paymentStatus.daysLeft < 0;
+      const isPending = !paid && !isOverdue;
+      const matchesStatus =
+        statusFilter === "todos" ||
+        (statusFilter === "pagado" && paid) ||
+        (statusFilter === "pendiente" && isPending) ||
+        (statusFilter === "vencido" && isOverdue);
 
         const haystack = [
           item?.nombre,
@@ -229,12 +240,7 @@ export default function PagoAdministracion() {
           items: [
             {
               label: "Estado",
-              value:
-                statusFilter === "todos"
-                  ? "Todos"
-                  : statusFilter === "pagado"
-                    ? "Pagados"
-                    : "Pendientes",
+              value: getStatusFilterLabel(statusFilter),
             },
             { label: "Tipo", value: "Proveedor" },
             { label: "Busqueda", value: searchTerm.trim() || "Sin filtro" },
@@ -369,6 +375,7 @@ export default function PagoAdministracion() {
                   <option value="todos">Todos</option>
                   <option value="pagado">Pagados</option>
                   <option value="pendiente">Pendientes</option>
+                  <option value="vencido">Vencidos</option>
                 </select>
               </div>
             </div>
