@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
 import { api } from "../../services/api";
 import { getTipoVisitaClass, getTipoVisitaLabel } from "../../utils/ingresos";
+import { downloadStructuredReportPdf } from "../../utils/pdfReport";
 
 const SHIFT_STORAGE_KEY = "vigilancia_pro_admin_shifts";
 
@@ -85,46 +86,6 @@ function saveStoredShifts(shifts) {
   if (typeof window === "undefined") return;
 
   window.localStorage.setItem(SHIFT_STORAGE_KEY, JSON.stringify(shifts));
-}
-
-function buildCsv(rows) {
-  const header = [
-    "id",
-    "nombre",
-    "documento",
-    "tipo_visita",
-    "apartamento_destino",
-    "placa_vehiculo",
-    "vigilante",
-    "estado",
-    "fecha_ingreso",
-    "hora_salida",
-  ];
-
-  const lines = rows.map((item) =>
-    header
-      .map((field) => {
-        const value = item?.[field] ?? "";
-        return `"${`${value}`.replaceAll('"', '""')}"`;
-      })
-      .join(",")
-  );
-
-  return [header.join(","), ...lines].join("\n");
-}
-
-function downloadCsv(rows) {
-  const csv = buildCsv(rows);
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = `reporte-vigilancia-${getTodayValue()}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
 }
 
 function SearchIcon() {
@@ -387,7 +348,56 @@ export default function Admin() {
   };
 
   const handleExport = () => {
-    downloadCsv(reportRows);
+    downloadStructuredReportPdf({
+      filename: `reporte-vigilancia-${getTodayValue()}.pdf`,
+      title: "Reporte administrativo",
+      subtitle: "Resumen operacional de ingresos filtrados",
+      metaLines: [
+        `Generado: ${new Intl.DateTimeFormat("es-CO", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(new Date())}`,
+        `Registros: ${reportRows.length}`,
+      ],
+      summaryCards: dashboardCards,
+      infoSections: [
+        {
+          title: "Filtros aplicados",
+          items: [
+            { label: "Desde", value: dateFrom || "--" },
+            { label: "Hasta", value: dateTo || "--" },
+            {
+              label: "Tipo",
+              value: selectedType === "todos" ? "Todos" : getTipoVisitaLabel(selectedType),
+            },
+            {
+              label: "Vigilante",
+              value: selectedVigilante === "todos" ? "Todos" : selectedVigilante,
+            },
+            { label: "Busqueda", value: searchTerm.trim() || "Sin filtro" },
+          ],
+        },
+      ],
+      tableColumns: [
+        { header: "Fecha", width: 85, getValue: (item) => formatTime(item.fecha_ingreso) },
+        { header: "Nombre", width: 110, getValue: (item) => item.nombre || "--" },
+        {
+          header: "Tipo",
+          width: 80,
+          getValue: (item) => getTipoVisitaLabel(item.tipo_visita),
+        },
+        { header: "Apto", width: 120, getValue: (item) => item.apartamento_destino || "--" },
+        { header: "Salida", width: 80, getValue: (item) => formatTime(item.hora_salida) },
+        { header: "Vigilante", width: 110, getValue: (item) => item.vigilante || "Sin asignar" },
+        {
+          header: "Estado",
+          width: 75,
+          getValue: (item) => (item.estado === "salio" ? "Salio" : "Adentro"),
+        },
+      ],
+      rows: reportRows,
+      emptyMessage: "No hay ingresos que coincidan con los filtros.",
+    });
   };
 
   const handleShiftChange = (event) => {
@@ -588,7 +598,7 @@ export default function Admin() {
             </div>
             <div className="admin-toolbar__actions">
               <button className="button button--ghost" onClick={handleExport} disabled={loading}>
-                Exportar CSV
+                Exportar PDF
               </button>
               <button
                 className="button button--soft"

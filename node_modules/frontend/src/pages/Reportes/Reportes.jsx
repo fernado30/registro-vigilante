@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
 import { api } from "../../services/api";
 import { getTipoVisitaClass, getTipoVisitaLabel } from "../../utils/ingresos";
+import { downloadStructuredReportPdf } from "../../utils/pdfReport";
 
 function getTodayValue() {
   const now = new Date();
@@ -54,47 +55,6 @@ function formatDuration(minutes) {
   if (!hours) return `${rest} min`;
 
   return `${hours} h ${rest.toString().padStart(2, "0")} min`;
-}
-
-function buildCsv(rows) {
-  const header = [
-    "id",
-    "nombre",
-    "documento",
-    "tipo_visita",
-    "apartamento_destino",
-    "placa_vehiculo",
-    "tipo_vehiculo",
-    "vigilante",
-    "estado",
-    "fecha_ingreso",
-    "hora_salida",
-  ];
-
-  const lines = rows.map((item) =>
-    header
-      .map((field) => {
-        const value = item?.[field] ?? "";
-        return `"${`${value}`.replaceAll('"', '""')}"`;
-      })
-      .join(",")
-  );
-
-  return [header.join(","), ...lines].join("\n");
-}
-
-function downloadCsv(rows) {
-  const csv = buildCsv(rows);
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = `reportes-vigilancia-${getTodayValue()}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
 }
 
 function ChartIcon() {
@@ -421,7 +381,63 @@ export default function Reportes() {
   };
 
   const handleExport = () => {
-    downloadCsv(reportRows);
+    downloadStructuredReportPdf({
+      filename: `reportes-vigilancia-${getTodayValue()}.pdf`,
+      title: "Reporte de ingresos",
+      subtitle: "Analisis detallado de ingresos y vigilancia",
+      metaLines: [
+        `Generado: ${new Intl.DateTimeFormat("es-CO", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(new Date())}`,
+        `Registros: ${reportRows.length}`,
+      ],
+      summaryCards: dashboardCards,
+      infoSections: [
+        {
+          title: "Filtros aplicados",
+          items: [
+            { label: "Desde", value: dateFrom || "--" },
+            { label: "Hasta", value: dateTo || "--" },
+            {
+              label: "Tipo",
+              value: selectedType === "todos" ? "Todos" : getTipoVisitaLabel(selectedType),
+            },
+            { label: "Vigilante", value: selectedVigilante === "todos" ? "Todos" : selectedVigilante },
+            { label: "Estado", value: selectedEstado === "todos" ? "Todos" : selectedEstado },
+            { label: "Busqueda", value: searchTerm.trim() || "Sin filtro" },
+          ],
+        },
+      ],
+      tableColumns: [
+        { header: "Fecha", width: 85, getValue: (item) => formatDateTime(item.fecha_ingreso) },
+        { header: "Nombre", width: 95, getValue: (item) => item.nombre || "--" },
+        { header: "Documento", width: 80, getValue: (item) => item.documento || "--" },
+        {
+          header: "Tipo",
+          width: 78,
+          getValue: (item) => getTipoVisitaLabel(item.tipo_visita),
+        },
+        { header: "Apartamento", width: 120, getValue: (item) => item.apartamento_destino || "--" },
+        {
+          header: "Vehiculo",
+          width: 110,
+          getValue: (item) =>
+            item.tiene_vehiculo
+              ? `${item.tipo_vehiculo || "--"} (${item.placa_vehiculo || "--"})`
+              : "Sin vehiculo",
+        },
+        { header: "Vigilante", width: 90, getValue: (item) => item.vigilante || "Sin asignar" },
+        {
+          header: "Estado",
+          width: 70,
+          getValue: (item) => (item.estado === "salio" ? "Salio" : "Adentro"),
+        },
+        { header: "Salida", width: 85, getValue: (item) => formatDateTime(item.hora_salida) },
+      ],
+      rows: reportRows,
+      emptyMessage: "No hay ingresos que coincidan con los filtros aplicados.",
+    });
   };
 
   const handleReset = () => {
@@ -609,7 +625,7 @@ export default function Reportes() {
                 onClick={handleExport}
                 disabled={loading || reportRows.length === 0}
               >
-                Exportar CSV
+                Exportar PDF
               </button>
               <button className="button button--soft" onClick={handleReset}>
                 Limpiar filtros
