@@ -43,11 +43,36 @@ function formatTime(value) {
   }).format(new Date(value));
 }
 
+function buildPageItems(currentPage, totalPages) {
+  if (totalPages <= 1) return [1];
+
+  const pageSet = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+  const pages = Array.from(pageSet)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+
+  const items = [];
+
+  pages.forEach((page, index) => {
+    const previous = pages[index - 1];
+
+    if (typeof previous === "number" && page - previous > 1) {
+      items.push("ellipsis");
+    }
+
+    items.push(page);
+  });
+
+  return items;
+}
+
 export default function Dashboard() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const loadIngresos = async () => {
     setLoading(true);
@@ -147,6 +172,14 @@ export default function Dashboard() {
       });
   }, [data, searchTerm]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredIngresos.length / pageSize));
+  const effectiveCurrentPage = Math.min(currentPage, totalPages);
+  const pageStartIndex = (effectiveCurrentPage - 1) * pageSize;
+  const visibleIngresos = filteredIngresos.slice(pageStartIndex, pageStartIndex + pageSize);
+  const pageStart = filteredIngresos.length > 0 ? pageStartIndex + 1 : 0;
+  const pageEnd = Math.min(pageStartIndex + pageSize, filteredIngresos.length);
+  const pageItems = buildPageItems(effectiveCurrentPage, totalPages);
+
   const handleSalida = async (id) => {
     setUpdatingId(id);
 
@@ -236,11 +269,14 @@ export default function Dashboard() {
                   type="search"
                   placeholder="Buscar por nombre, cedula, apartamento, placa o vigilante"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
               </div>
-              <div className="vigilance-toolbar__meta">
-                {filteredIngresos.length} registros visibles
+            <div className="vigilance-toolbar__meta">
+                Mostrando {pageStart}-{pageEnd} de {filteredIngresos.length}
               </div>
             </div>
 
@@ -265,7 +301,7 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredIngresos.map((item, index) => {
+                    {visibleIngresos.map((item, index) => {
                       const initials = getInitials(item.nombre);
                       const entradaHora = formatTime(item.fecha_ingreso);
                       const salidaHora = formatTime(item.hora_salida);
@@ -335,6 +371,56 @@ export default function Dashboard() {
                     })}
                   </tbody>
                 </table>
+
+                <div className="history-pagination vigilance-pagination">
+                  <div className="history-pagination__info">
+                    Pagina <strong>{effectiveCurrentPage}</strong> de <strong>{totalPages}</strong>
+                  </div>
+
+                  <div className="history-pagination__controls" aria-label="Paginacion del panel vigilante">
+                    <button
+                      type="button"
+                      className="history-pagination__button"
+                      onClick={() =>
+                        setCurrentPage((page) => Math.max(1, Math.min(totalPages, page - 1)))
+                      }
+                      disabled={effectiveCurrentPage === 1}
+                    >
+                      Anterior
+                    </button>
+
+                    {pageItems.map((item, index) =>
+                      item === "ellipsis" ? (
+                        <span key={`ellipsis-${index}`} className="history-pagination__ellipsis">
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={item}
+                          type="button"
+                          className={`history-pagination__button ${
+                            item === effectiveCurrentPage ? "history-pagination__button--active" : ""
+                          }`}
+                          onClick={() => setCurrentPage(item)}
+                          aria-current={item === effectiveCurrentPage ? "page" : undefined}
+                        >
+                          {item}
+                        </button>
+                      )
+                    )}
+
+                    <button
+                      type="button"
+                      className="history-pagination__button"
+                      onClick={() =>
+                        setCurrentPage((page) => Math.min(totalPages, Math.max(1, page + 1)))
+                      }
+                      disabled={effectiveCurrentPage === totalPages}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="empty-state" style={{ marginTop: 20 }}>
