@@ -2203,6 +2203,42 @@
   color: #1e40af;
 }
 
+.report-summary-panel {
+  padding: 20px;
+}
+
+.report-summary__header {
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.report-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stat-card--compact {
+  padding: 16px 18px;
+  min-height: 120px;
+}
+
+.stat-card--compact .stat-card__label {
+  margin-bottom: 10px;
+  font-size: 0.88rem;
+}
+
+.stat-card--compact .stat-card__value {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  line-height: 1.05;
+}
+
+.stat-card--compact .stat-card__note {
+  margin-top: 10px;
+  font-size: 0.88rem;
+}
+
 @media (max-width: 960px) {
   .panels-grid {
     grid-template-columns: 1fr;
@@ -2211,10 +2247,22 @@
   .admin-toolbar__filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .report-summary__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
   .admin-toolbar__filters {
+    grid-template-columns: 1fr;
+  }
+
+  .report-summary-panel {
+    padding: 18px;
+  }
+
+  .report-summary__grid {
     grid-template-columns: 1fr;
   }
 

@@ -550,19 +550,32 @@ export default function Reportes() {
           </div>
         </section>
 
-        {/* Cards de estadísticas */}
-        <section className="stats-grid admin-stats">
-          {dashboardCards.map((stat, index) => (
-            <article
-              key={stat.label}
-              className="stat-card fade-up"
-              style={{ animationDelay: `${index * 0.06}s` }}
-            >
-              <span className="stat-card__label">{stat.label}</span>
-              <p className="stat-card__value">{stat.value}</p>
-              <p className="stat-card__note">{stat.note}</p>
-            </article>
-          ))}
+        <section className="panel report-summary-panel fade-up">
+          <div className="section-head report-summary__header">
+            <div>
+              <h2 className="section-title">Resumen de reportes</h2>
+              <p className="section-subtitle">
+                Un bloque compacto con los indicadores clave del periodo seleccionado.
+              </p>
+            </div>
+            <div className="mini-note admin-mini-note">
+              <strong>Total:</strong> {reportRows.length} ingresos filtrados
+            </div>
+          </div>
+
+          <div className="report-summary__grid">
+            {dashboardCards.map((stat, index) => (
+              <article
+                key={stat.label}
+                className="stat-card stat-card--compact fade-up"
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                <span className="stat-card__label">{stat.label}</span>
+                <p className="stat-card__value">{stat.value}</p>
+                <p className="stat-card__note">{stat.note}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         {/* Filtros */}
