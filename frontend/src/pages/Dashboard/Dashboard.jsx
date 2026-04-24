@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../services/api";
 import AppShell from "../../components/AppShell";
-import { getTipoVisitaClass, getTipoVisitaLabel } from "../../utils/ingresos";
+import {
+  getPagoAdministracionClass,
+  getPagoAdministracionLabel,
+  getTipoVisitaClass,
+  getTipoVisitaLabel,
+} from "../../utils/ingresos";
 
 function SearchIcon() {
   return (
@@ -165,6 +170,7 @@ export default function Dashboard() {
           item?.placa_vehiculo,
           item?.tipo_vehiculo,
           item?.vigilante,
+          getPagoAdministracionLabel(item?.pago_administracion),
         ]
           .filter(Boolean)
           .join(" ")
@@ -293,15 +299,16 @@ export default function Dashboard() {
               <div className="vigilance-table-shell">
                 <table className="vigilance-table">
                   <thead>
-                    <tr>
-                      <th>Persona</th>
-                      <th>Tipo</th>
-                      <th>Destino</th>
-                      <th>Fecha y hora</th>
-                      <th>Estado</th>
-                      <th />
-                    </tr>
-                  </thead>
+                  <tr>
+                    <th>Persona</th>
+                    <th>Tipo</th>
+                    <th>Destino</th>
+                    <th>Fecha y hora</th>
+                    <th>Pago admin</th>
+                    <th>Estado</th>
+                    <th />
+                  </tr>
+                </thead>
                   <tbody>
                     {visibleIngresos.map((item, index) => {
                       const initials = getInitials(item.nombre);
@@ -352,6 +359,11 @@ export default function Dashboard() {
                                 <small className="time-cell__sub">Sin salida registrada</small>
                               )}
                             </div>
+                          </td>
+                          <td>
+                            <span className={getPagoAdministracionClass(item?.pago_administracion)}>
+                              {getPagoAdministracionLabel(item?.pago_administracion)}
+                            </span>
                           </td>
                           <td>
                             <span className={getStateClass(item.estado)}>
