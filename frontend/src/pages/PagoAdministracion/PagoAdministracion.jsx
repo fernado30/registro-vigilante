@@ -6,6 +6,7 @@ import {
   getPagoAdministracionLabel,
   isPagoAdministracionPagado,
 } from "../../utils/ingresos";
+import { downloadStructuredReportPdf } from "../../utils/pdfReport";
 
 function SearchIcon() {
   return (
@@ -184,6 +185,57 @@ export default function PagoAdministracion() {
     setCurrentPage(1);
   };
 
+  const handleExportPdf = () => {
+    downloadStructuredReportPdf({
+      filename: `pago-administracion-${new Date().toISOString().slice(0, 10)}.pdf`,
+      title: "Pago de administracion",
+      subtitle: "Informe de registros con estado de pago y fecha de confirmacion",
+      metaLines: [
+        `Generado: ${new Intl.DateTimeFormat("es-CO", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(new Date())}`,
+        `Registros: ${filteredRows.length}`,
+      ],
+      summaryCards,
+      infoSections: [
+        {
+          title: "Filtros aplicados",
+          items: [
+            {
+              label: "Estado",
+              value:
+                statusFilter === "todos"
+                  ? "Todos"
+                  : statusFilter === "pagado"
+                    ? "Pagados"
+                    : "Pendientes",
+            },
+            { label: "Busqueda", value: searchTerm.trim() || "Sin filtro" },
+          ],
+        },
+      ],
+      tableColumns: [
+        { header: "Nombre", width: 110, getValue: (item) => item.nombre || "--" },
+        { header: "Documento", width: 80, getValue: (item) => item.documento || "--" },
+        { header: "Apartamento", width: 120, getValue: (item) => item.apartamento_destino || "--" },
+        { header: "Vigilante", width: 100, getValue: (item) => item.vigilante || "Sin asignar" },
+        {
+          header: "Pago admin",
+          width: 90,
+          getValue: (item) => getPagoAdministracionLabel(item?.pago_administracion),
+        },
+        {
+          header: "Fecha pago",
+          width: 95,
+          getValue: (item) => formatDateTime(item?.fecha_pago_administracion),
+        },
+      ],
+      rows: filteredRows,
+      emptyMessage: "No hay registros de pago que coincidan con los filtros aplicados.",
+    });
+  };
+
   return (
     <AppShell>
       <main className="app-page admin-page">
@@ -279,12 +331,19 @@ export default function PagoAdministracion() {
                   }}
                 />
               </div>
-              <div className="admin-toolbar__actions">
-                <button className="button button--soft" onClick={handleReset}>
-                  Limpiar filtros
-                </button>
-              </div>
+            <div className="admin-toolbar__actions">
+              <button
+                className="button button--ghost"
+                onClick={handleExportPdf}
+                disabled={loading || filteredRows.length === 0}
+              >
+                Exportar PDF
+              </button>
+              <button className="button button--soft" onClick={handleReset}>
+                Limpiar filtros
+              </button>
             </div>
+          </div>
           </section>
 
           <section className="panel admin-section fade-up">
