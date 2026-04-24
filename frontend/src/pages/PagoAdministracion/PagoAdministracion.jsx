@@ -318,23 +318,21 @@ export default function PagoAdministracion() {
                     revisión
                   </span>
                 </div>
-                <p className="payment-alert__text">
-                  {paymentAlerts.filter(({ status }) => status.daysLeft < 0).length > 0
-                    ? `${paymentAlerts.filter(({ status }) => status.daysLeft < 0).length} ya vencido${
-                        paymentAlerts.filter(({ status }) => status.daysLeft < 0).length === 1
-                          ? ""
-                          : "s"
-                      }`
-                    : "Hay pagos próximos a vencer en los siguientes días."}
-                </p>
-                <div className="payment-alert__chips">
-                  <span className="status-tag status-tag--amber">
-                    {paymentAlerts.filter(({ status }) => status.daysLeft >= 0).length} por vencer
-                  </span>
-                  <span className="status-tag status-tag--peach">
-                    {paymentAlerts.filter(({ status }) => status.daysLeft < 0).length} vencidas
-                  </span>
-                </div>
+                <ul className="payment-alert__list">
+                  {paymentAlerts.slice(0, 6).map(({ item, status }) => (
+                    <li key={item.id} className="payment-alert__item">
+                      <span className="payment-alert__name">{item.nombre || "Sin nombre"}</span>
+                      <span className={`payment-alert__state payment-alert__state--${status.tone}`}>
+                        {status.label}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {paymentAlerts.length > 6 ? (
+                  <p className="payment-alert__text">
+                    Mostrando 6 de {paymentAlerts.length} proveedores con vencimiento próximo.
+                  </p>
+                ) : null}
               </div>
             </section>
           ) : null}

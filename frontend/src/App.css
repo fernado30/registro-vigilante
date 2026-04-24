@@ -1227,6 +1227,58 @@ body,
   line-height: 1.45;
 }
 
+.payment-alert__list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.payment-alert__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(253, 224, 71, 0.28);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.payment-alert__name {
+  color: #92400e;
+  font-weight: 800;
+}
+
+.payment-alert__state {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.payment-alert__state--amber {
+  color: #b45309;
+  background: rgba(254, 240, 138, 0.34);
+}
+
+.payment-alert__state--danger {
+  color: #b91c1c;
+  background: rgba(254, 226, 226, 0.72);
+}
+
+.payment-alert__state--mint {
+  color: #0f766e;
+  background: rgba(220, 252, 231, 0.82);
+}
+
+.payment-alert__state--muted {
+  color: #475569;
+  background: rgba(241, 245, 249, 0.88);
+}
+
 .payment-alert__chips {
   display: flex;
   gap: 8px;
