@@ -594,14 +594,6 @@ export default function Reportes() {
           </div>
 
           <div className="report-summary-card">
-            <div className="report-summary-card__lead">
-              <span className="report-summary-card__label">Resumen general</span>
-              <p className="report-summary-card__value">{totalIngresos} ingresos filtrados</p>
-              <p className="report-summary-card__note">
-                Bloque unificado con los indicadores mas importantes para lectura rapida.
-              </p>
-            </div>
-
             <div className="report-summary-card__metrics">
               {summaryMetrics.map((stat, index) => (
                 <article
