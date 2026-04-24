@@ -2348,21 +2348,101 @@
     grid-template-columns: 1fr;
   }
 
+  .admin-hero {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .admin-hero__badge {
+    width: 100%;
+  }
+
+  .admin-badge {
+    width: 100%;
+    justify-content: center;
+  }
+
   .report-summary-panel {
     padding: 14px;
+  }
+
+  .report-summary__header {
+    margin-bottom: 12px;
+  }
+
+  .report-summary-card {
+    padding: 14px;
+  }
+
+  .report-summary-card__lead {
+    padding: 12px;
+  }
+
+  .report-summary-card__metrics {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .report-summary-metric {
+    padding: 13px 13px 12px;
+  }
+
+  .admin-toolbar {
+    gap: 12px;
+  }
+
+  .admin-toolbar__search {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .admin-toolbar__actions {
+    width: 100%;
+  }
+
+  .admin-toolbar__actions .button {
+    flex: 1;
+    width: 100%;
+  }
+
+  .panels-grid {
+    gap: 12px;
+  }
+
+  .chart-panel {
+    padding: 16px;
+  }
+
+  .chart-container {
+    gap: 10px;
+  }
+
+  .chart-bars {
+    gap: 10px;
+  }
+
+  .data-table-header {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  .data-table-title {
+    font-size: 1rem;
+  }
+
+  .data-table-subtitle {
+    font-size: 0.88rem;
   }
 
   .report-summary-card {
     grid-template-columns: 1fr;
   }
 
-  .report-summary-card__metrics {
-    grid-template-columns: 1fr;
-  }
-
   .table-responsive {
-    margin-left: -20px;
-    margin-right: -20px;
+    margin-left: -14px;
+    margin-right: -14px;
     border-radius: 0;
     border-left: 0;
     border-right: 0;
@@ -2370,12 +2450,36 @@
 
   .data-table thead th,
   .data-table tbody td {
-    padding: 11px 13px;
+    padding: 11px 12px;
     font-size: 0.85rem;
   }
 
   .table-value {
     max-width: 140px;
+  }
+
+  .history-table__meta {
+    padding-top: 10px;
+    gap: 6px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .history-pagination {
+    padding: 14px 0 0;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .history-pagination__controls {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .history-pagination__button {
+    flex: 0 0 auto;
   }
 }
 
