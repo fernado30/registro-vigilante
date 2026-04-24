@@ -298,13 +298,14 @@ export default function Dashboard() {
             ) : filteredIngresos.length > 0 ? (
               <div className="vigilance-table-shell">
                 <table className="vigilance-table">
-                  <thead>
+                <thead>
                   <tr>
                     <th>Persona</th>
                     <th>Tipo</th>
                     <th>Destino</th>
                     <th>Fecha y hora</th>
                     <th>Pago admin</th>
+                    <th>Fecha pago</th>
                     <th>Estado</th>
                     <th />
                   </tr>
@@ -364,6 +365,16 @@ export default function Dashboard() {
                             <span className={getPagoAdministracionClass(item?.pago_administracion)}>
                               {getPagoAdministracionLabel(item?.pago_administracion)}
                             </span>
+                          </td>
+                          <td className="vigilance-table__cell vigilance-table__cell--payment-date">
+                            <div className="payment-date-cell">
+                              <span className="payment-date-cell__label">Confirmación</span>
+                              <strong className="payment-date-cell__value">
+                                {item?.pago_administracion
+                                  ? formatDateTime(item?.fecha_pago_administracion)
+                                  : "--"}
+                              </strong>
+                            </div>
                           </td>
                           <td className="vigilance-table__cell vigilance-table__cell--state">
                             <span className={getStateClass(item.estado)}>

@@ -1532,6 +1532,7 @@ body,
 .vigilance-table__cell--destination,
 .vigilance-table__cell--time,
 .vigilance-table__cell--payment,
+.vigilance-table__cell--payment-date,
 .vigilance-table__cell--state,
 .vigilance-table__cell--action {
   vertical-align: top;
@@ -1607,6 +1608,32 @@ body,
   color: #0f766e;
   background: rgba(220, 252, 231, 0.9);
   border-color: rgba(167, 243, 208, 0.8);
+}
+
+.payment-date-cell {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(191, 219, 254, 0.48);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 248, 255, 0.84));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.payment-date-cell__label {
+  color: #5b6b84;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.payment-date-cell__value {
+  color: #1f2937;
+  font-size: 0.94rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 
 .row-action {
