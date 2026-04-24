@@ -192,7 +192,7 @@ export default function AppShell({ children }) {
 
   return (
     <div className="app-shell">
-      <aside className="app-shell__sidebar">
+      <header className="app-shell__sidebar" aria-label="Barra de navegacion principal">
         <span className="app-shell__orb app-shell__orb--one" aria-hidden="true" />
         <span className="app-shell__orb app-shell__orb--two" aria-hidden="true" />
         <span className="app-shell__orb app-shell__orb--three" aria-hidden="true" />
@@ -230,7 +230,7 @@ export default function AppShell({ children }) {
             </span>
           </button>
         </div>
-      </aside>
+      </header>
 
       <div className="app-shell__content">{children}</div>
     </div>
