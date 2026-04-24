@@ -174,13 +174,12 @@ function SidebarLink({ to, label, icon, end = false }) {
       <span className="app-shell__nav-link-icon" aria-hidden="true">
         <NavIcon />
       </span>
-      <span className="app-shell__nav-link-text">{label}</span>
     </NavLink>
   );
 }
 
 export default function AppShell({ children }) {
-  const { isAdmin, vigilanteName, logout } = useContext(AuthContext);
+  const { isAdmin, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -195,46 +194,21 @@ export default function AppShell({ children }) {
         <span className="app-shell__orb app-shell__orb--two" aria-hidden="true" />
         <span className="app-shell__orb app-shell__orb--three" aria-hidden="true" />
 
-        <div className="app-shell__brand">
+        <div className="app-shell__brand" title="Panel operativo">
           <div className="app-shell__brand-mark">
             <BrandMark />
-          </div>
-          <div className="app-shell__brand-copy">
-            <p className="app-shell__brand-kicker">Vigilancia Pro</p>
-            <h2 className="app-shell__brand-title">Panel operativo</h2>
-          </div>
-        </div>
-
-        <div className="app-shell__session">
-          <div className="app-shell__session-copy">
-            <span className="app-shell__session-label">Sesion activa</span>
-            <strong className="app-shell__session-name">{vigilanteName || "Sin asignar"}</strong>
-            <span
-              className={`app-shell__role-badge ${
-                isAdmin ? "app-shell__role-badge--admin" : ""
-              }`}
-            >
-              {isAdmin ? "Administrador" : "Vigilante"}
-            </span>
           </div>
         </div>
 
         <nav className="app-shell__nav" aria-label="Navegacion principal">
           <div className="app-shell__nav-group">
-            <span className="app-shell__section-label">Principal</span>
             {commonNav.map((item) => (
               <SidebarLink key={item.to} {...item} />
             ))}
+            {isAdmin
+              ? adminNav.map((item) => <SidebarLink key={item.to} {...item} />)
+              : null}
           </div>
-
-          {isAdmin ? (
-            <div className="app-shell__nav-group">
-              <span className="app-shell__section-label">Administrador</span>
-              {adminNav.map((item) => (
-                <SidebarLink key={item.to} {...item} />
-              ))}
-            </div>
-          ) : null}
         </nav>
 
         <div className="app-shell__footer">
@@ -248,7 +222,6 @@ export default function AppShell({ children }) {
             <span className="app-shell__nav-link-icon" aria-hidden="true">
               <LogoutIcon />
             </span>
-            <span className="app-shell__nav-link-text">Cerrar sesion</span>
           </button>
         </div>
       </aside>
