@@ -409,6 +409,39 @@ export default function Reportes() {
     },
   ];
 
+  const summaryMetrics = [
+    {
+      label: "Permanencia máxima",
+      value: formatDuration(maxStay),
+      note: "Mayor tiempo de estancia",
+    },
+    {
+      label: "Permanencia promedio",
+      value: formatDuration(avgStay),
+      note: "Tiempo medio de estancia",
+    },
+    {
+      label: "Con vehículos",
+      value: vehiclesCount,
+      note: "Ingresos con vehículo",
+    },
+    {
+      label: "Personas salieron",
+      value: personasSalio,
+      note: "Con salida registrada",
+    },
+    {
+      label: "Personas adentro",
+      value: personasAdentro,
+      note: "Sin salida registrada",
+    },
+    {
+      label: "Total ingresos",
+      value: totalIngresos,
+      note: "Registros en el período",
+    },
+  ];
+
   const handleLogout = async () => {
     await logout();
     navigate("/");
@@ -553,9 +586,9 @@ export default function Reportes() {
         <section className="panel report-summary-panel fade-up">
           <div className="section-head report-summary__header">
             <div>
-              <h2 className="section-title">Resumen de reportes</h2>
+              <h2 className="section-title">Resumen de reporte</h2>
               <p className="section-subtitle">
-                Un bloque compacto con los indicadores clave del periodo seleccionado.
+                Toda la informacion clave del periodo en una sola tarjeta bien organizada.
               </p>
             </div>
             <div className="mini-note admin-mini-note">
@@ -563,18 +596,28 @@ export default function Reportes() {
             </div>
           </div>
 
-          <div className="report-summary__grid">
-            {dashboardCards.map((stat, index) => (
-              <article
-                key={stat.label}
-                className="stat-card stat-card--compact fade-up"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <span className="stat-card__label">{stat.label}</span>
-                <p className="stat-card__value">{stat.value}</p>
-                <p className="stat-card__note">{stat.note}</p>
-              </article>
-            ))}
+          <div className="report-summary-card">
+            <div className="report-summary-card__lead">
+              <span className="report-summary-card__label">Resumen general</span>
+              <p className="report-summary-card__value">{totalIngresos} ingresos filtrados</p>
+              <p className="report-summary-card__note">
+                Bloque unificado con los indicadores mas importantes para lectura rapida.
+              </p>
+            </div>
+
+            <div className="report-summary-card__metrics">
+              {summaryMetrics.map((stat, index) => (
+                <article
+                  key={stat.label}
+                  className="report-summary-metric fade-up"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <span className="report-summary-metric__label">{stat.label}</span>
+                  <strong className="report-summary-metric__value">{stat.value}</strong>
+                  <span className="report-summary-metric__note">{stat.note}</span>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
 
