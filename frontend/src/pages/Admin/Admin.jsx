@@ -41,6 +41,61 @@ function getDateKey(value) {
   return `${year}-${month}-${day}`;
 }
 
+function getMonthKey(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+
+  return `${year}-${month}`;
+}
+
+function getMonthLabel(monthKey) {
+  if (!monthKey) return "--";
+
+  const [year, month] = monthKey.split("-").map(Number);
+  if (!year || !month) return monthKey;
+
+  return new Intl.DateTimeFormat("es-CO", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(year, month - 1, 1));
+}
+
+function shiftMonth(monthKey, delta) {
+  if (!monthKey) return getMonthKey();
+
+  const [year, month] = monthKey.split("-").map(Number);
+  const date = new Date(year, month - 1 + delta, 1);
+  return getMonthKey(date);
+}
+
+function buildCalendarDays(monthKey) {
+  if (!monthKey) return [];
+
+  const [year, month] = monthKey.split("-").map(Number);
+  if (!year || !month) return [];
+
+  const firstDay = new Date(year, month - 1, 1);
+  const startOffset = firstDay.getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const cells = [];
+
+  for (let i = 0; i < startOffset; i += 1) {
+    cells.push(null);
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const dayKey = `${year}-${`${month}`.padStart(2, "0")}-${`${day}`.padStart(2, "0")}`;
+    cells.push(dayKey);
+  }
+
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
+  }
+
+  return cells;
+}
+
 function formatDateLabel(value) {
   if (!value) return "--";
 
@@ -262,6 +317,7 @@ export default function Admin() {
     puesto: "Porteria principal",
     observaciones: "",
   });
+  const [selectedCalendarMonth, setSelectedCalendarMonth] = useState(() => getMonthKey());
 
   useEffect(() => {
     let active = true;
@@ -464,6 +520,28 @@ export default function Admin() {
       return 0;
     });
   }, [shifts]);
+
+  const calendarDays = useMemo(() => buildCalendarDays(selectedCalendarMonth), [selectedCalendarMonth]);
+
+  const shiftsByDate = useMemo(() => {
+    const map = new Map();
+
+    orderedShifts.forEach((shift) => {
+      const key = getDateKey(shift.fecha);
+      if (!key) return;
+
+      const items = map.get(key) || [];
+      items.push(shift);
+      map.set(key, items);
+    });
+
+    map.forEach((items, key) => {
+      items.sort((a, b) => getTimeMinutes(a.hora_inicio) - getTimeMinutes(b.hora_inicio));
+      map.set(key, items);
+    });
+
+    return map;
+  }, [orderedShifts]);
 
   const handleResetFilters = () => {
     setSearchTerm("");
@@ -1081,95 +1159,141 @@ export default function Admin() {
               ))}
             </div>
 
-            <div className="shift-list">
-              {orderedShifts.length > 0 ? (
-                orderedShifts.map((shift) => {
-                  const accentStyle = getShiftAccentStyle(shift.vigilante);
-                  const duration = getShiftDurationMinutes(shift);
-                  const left = Math.max(0, Math.min(100, (getTimeMinutes(shift.hora_inicio) / 1440) * 100));
-                  const width = Math.max(
-                    6,
-                    Math.min(100 - left, (Math.max(1, duration) / 1440) * 100)
-                  );
+            <div className="shift-calendar">
+              <div className="shift-calendar__header">
+                <div>
+                  <h3 className="shift-calendar__title">Calendario de turnos</h3>
+                  <p className="shift-calendar__subtitle">
+                    Los días con asignaciones se resaltan con el color del vigilante y muestran su
+                    rango horario.
+                  </p>
+                </div>
+                <div className="shift-calendar__nav">
+                  <button
+                    type="button"
+                    className="history-pagination__button"
+                    onClick={() => setSelectedCalendarMonth((value) => shiftMonth(value, -1))}
+                  >
+                    Anterior
+                  </button>
+                  <span className="shift-calendar__month">{getMonthLabel(selectedCalendarMonth)}</span>
+                  <button
+                    type="button"
+                    className="history-pagination__button"
+                    onClick={() => setSelectedCalendarMonth((value) => shiftMonth(value, 1))}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
 
+              <div className="shift-calendar__legend">
+                {vigilantes.slice(0, 5).map((vigilante) => {
+                  const style = getShiftAccentStyle(vigilante);
                   return (
-                    <article
-                      className="shift-card shift-card--agenda"
-                      key={shift.id}
-                      style={accentStyle}
-                    >
-                      <span className="shift-card__band" />
-                      <div className="shift-card__header">
-                        <div>
-                          <span className="shift-card__eyebrow">Horario asignado</span>
-                          <h3 className="shift-card__title">{shift.vigilante}</h3>
-                          <p className="shift-card__meta">
-                            {formatDateLabel(shift.fecha)} | {shift.hora_inicio} - {shift.hora_fin}
-                          </p>
-                        </div>
-                        <span
-                          className={`status-tag ${
-                            shift.status === "completado"
-                              ? "status-tag--mint"
-                              : "status-tag--amber"
-                          }`}
-                        >
-                          {shift.status === "completado" ? "Completado" : "Programado"}
-                        </span>
-                      </div>
-
-                      <div className="shift-card__timeline">
-                        <div className="shift-timeline">
-                          <div className="shift-timeline__labels">
-                            <span>{shift.hora_inicio}</span>
-                            <span>{shift.hora_fin}</span>
-                          </div>
-                          <div className="shift-timeline__track">
-                            <span
-                              className="shift-timeline__fill"
-                              style={{
-                                left: `${left}%`,
-                                width: `${width}%`,
-                              }}
-                            />
-                          </div>
-                          <div className="shift-timeline__legend">
-                            <span className="shift-timeline__pill">
-                              <strong>Puesto:</strong> {shift.puesto}
-                            </span>
-                            <span className="shift-timeline__pill shift-timeline__pill--soft">
-                              <strong>Duración:</strong> {formatDuration(duration)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <p className="shift-card__body">
-                        <strong>Puesto:</strong> {shift.puesto}
-                      </p>
-                      {shift.observaciones ? (
-                        <p className="shift-card__notes">{shift.observaciones}</p>
-                      ) : null}
-
-                      <div className="shift-card__actions">
-                        <button
-                          type="button"
-                          className="button button--ghost"
-                          onClick={() => toggleShiftStatus(shift.id)}
-                        >
-                          {shift.status === "completado" ? "Reabrir" : "Marcar completado"}
-                        </button>
-                        <button
-                          type="button"
-                          className="button button--soft"
-                          onClick={() => removeShift(shift.id)}
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    </article>
+                    <span key={vigilante} className="shift-calendar__legend-item" style={style}>
+                      <span className="shift-calendar__legend-dot" />
+                      {vigilante}
+                    </span>
                   );
-                })
+                })}
+              </div>
+
+              {calendarDays.length > 0 ? (
+                <div className="shift-calendar__grid">
+                  {["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"].map((day) => (
+                    <div key={day} className="shift-calendar__weekday">
+                      {day}
+                    </div>
+                  ))}
+
+                  {calendarDays.map((dayKey, index) => {
+                    const dayShifts = dayKey ? shiftsByDate.get(dayKey) || [] : [];
+                    const isToday = dayKey === getTodayValue();
+
+                    return (
+                      <div
+                        key={dayKey || `blank-${index}`}
+                        className={`shift-calendar__day ${
+                          dayKey ? "shift-calendar__day--active" : "shift-calendar__day--empty"
+                        } ${isToday ? "shift-calendar__day--today" : ""}`}
+                      >
+                        {dayKey ? (
+                          <>
+                            <div className="shift-calendar__day-head">
+                              <strong>{dayKey.slice(8, 10)}</strong>
+                              {isToday ? <span>Hoy</span> : null}
+                            </div>
+                            <div className="shift-calendar__day-list">
+                              {dayShifts.length > 0 ? (
+                                dayShifts.map((shift) => {
+                                  const style = getShiftAccentStyle(shift.vigilante);
+                                  const duration = getShiftDurationMinutes(shift);
+                                  const left = Math.max(
+                                    0,
+                                    Math.min(100, (getTimeMinutes(shift.hora_inicio) / 1440) * 100)
+                                  );
+                                  const width = Math.max(
+                                    6,
+                                    Math.min(100 - left, (Math.max(1, duration) / 1440) * 100)
+                                  );
+
+                                  return (
+                                    <article
+                                      key={shift.id}
+                                      className={`shift-calendar__event ${
+                                        shift.status === "completado"
+                                          ? "shift-calendar__event--done"
+                                          : ""
+                                      }`}
+                                      style={style}
+                                    >
+                                      <div className="shift-calendar__event-header">
+                                        <strong>{shift.vigilante}</strong>
+                                        <span>
+                                          {shift.hora_inicio} - {shift.hora_fin}
+                                        </span>
+                                      </div>
+                                      <div className="shift-calendar__event-track">
+                                        <span
+                                          className="shift-calendar__event-fill"
+                                          style={{ left: `${left}%`, width: `${width}%` }}
+                                        />
+                                      </div>
+                                      <p className="shift-calendar__event-meta">
+                                        {shift.puesto}
+                                      </p>
+                                      <div className="shift-card__actions shift-calendar__event-actions">
+                                        <button
+                                          type="button"
+                                          className="button button--ghost"
+                                          onClick={() => toggleShiftStatus(shift.id)}
+                                        >
+                                          {shift.status === "completado"
+                                            ? "Reabrir"
+                                            : "Marcar completado"}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="button button--soft"
+                                          onClick={() => removeShift(shift.id)}
+                                        >
+                                          Eliminar
+                                        </button>
+                                      </div>
+                                    </article>
+                                  );
+                                })
+                              ) : (
+                                <div className="shift-calendar__empty">Sin turnos</div>
+                              )}
+                            </div>
+                          </>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
                 <div className="empty-state">Aun no hay turnos guardados.</div>
               )}
