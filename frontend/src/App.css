@@ -2608,29 +2608,29 @@
 
 @media (max-width: 1120px) {
   .app-shell {
-    padding: 16px 16px 104px;
+    padding: 104px 16px 16px;
   }
 
   .app-shell__sidebar {
     position: fixed;
-    left: 50%;
-    right: auto;
-    top: auto;
-    bottom: 14px;
-    width: min(calc(100vw - 24px), 640px);
-    height: auto;
-    transform: translateX(-50%);
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    bottom: auto;
+    width: auto;
+    height: 76px;
+    transform: none;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
     padding: 12px 14px;
     gap: 10px;
-    border-radius: 26px;
+    border-radius: 28px;
   }
 
   .app-shell__sidebar:hover,
   .app-shell__sidebar:focus-within {
-    width: min(calc(100vw - 24px), 640px);
+    width: auto;
     flex-basis: auto;
     padding: 12px 14px;
   }
@@ -2676,9 +2676,15 @@
   }
 
   .app-shell__sidebar {
+    top: auto;
+    left: 50%;
+    right: auto;
+    bottom: 14px;
     width: calc(100vw - 16px);
+    height: auto;
     padding: 10px 12px;
     gap: 8px;
+    transform: translateX(-50%);
   }
 
   .app-shell__nav-group {
