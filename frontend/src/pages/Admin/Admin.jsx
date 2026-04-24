@@ -71,6 +71,84 @@ function formatDuration(minutes) {
   return `${hours} h ${rest.toString().padStart(2, "0")} min`;
 }
 
+function getTimeMinutes(value) {
+  if (!value || !value.includes(":")) return 0;
+
+  const [hours, minutes] = value.split(":").map((part) => Number(part));
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return 0;
+
+  return hours * 60 + minutes;
+}
+
+function getShiftDurationMinutes(shift) {
+  const start = getTimeMinutes(shift?.hora_inicio);
+  const end = getTimeMinutes(shift?.hora_fin);
+
+  if (!start || !end) return 0;
+  return Math.max(0, end - start);
+}
+
+function getShiftSortKey(shift) {
+  return `${shift?.fecha || ""} ${shift?.hora_inicio || ""}`;
+}
+
+function getStringHash(value) {
+  return `${value || ""}`
+    .split("")
+    .reduce((acc, char) => acc * 31 + char.charCodeAt(0), 7);
+}
+
+function getShiftAccentStyle(vigilante) {
+  const palette = [
+    {
+      border: "rgba(96, 165, 250, 0.26)",
+      surface: "linear-gradient(135deg, rgba(239, 246, 255, 0.98), rgba(219, 234, 254, 0.82))",
+      accent: "rgba(59, 130, 246, 0.92)",
+      accentSoft: "rgba(59, 130, 246, 0.12)",
+      text: "#1d4ed8",
+    },
+    {
+      border: "rgba(45, 212, 191, 0.28)",
+      surface: "linear-gradient(135deg, rgba(236, 253, 245, 0.98), rgba(204, 251, 241, 0.82))",
+      accent: "rgba(13, 148, 136, 0.92)",
+      accentSoft: "rgba(13, 148, 136, 0.12)",
+      text: "#0f766e",
+    },
+    {
+      border: "rgba(251, 191, 36, 0.28)",
+      surface: "linear-gradient(135deg, rgba(255, 251, 235, 0.98), rgba(254, 249, 195, 0.82))",
+      accent: "rgba(245, 158, 11, 0.92)",
+      accentSoft: "rgba(245, 158, 11, 0.12)",
+      text: "#b45309",
+    },
+    {
+      border: "rgba(244, 114, 182, 0.28)",
+      surface: "linear-gradient(135deg, rgba(253, 242, 248, 0.98), rgba(252, 231, 243, 0.82))",
+      accent: "rgba(219, 39, 119, 0.92)",
+      accentSoft: "rgba(219, 39, 119, 0.12)",
+      text: "#be185d",
+    },
+    {
+      border: "rgba(167, 139, 250, 0.28)",
+      surface: "linear-gradient(135deg, rgba(245, 243, 255, 0.98), rgba(237, 233, 254, 0.82))",
+      accent: "rgba(109, 40, 217, 0.92)",
+      accentSoft: "rgba(109, 40, 217, 0.12)",
+      text: "#6d28d9",
+    },
+  ];
+
+  const paletteIndex = Math.abs(getStringHash(vigilante)) % palette.length;
+  const selected = palette[paletteIndex];
+
+  return {
+    "--shift-border": selected.border,
+    "--shift-surface": selected.surface,
+    "--shift-accent": selected.accent,
+    "--shift-accent-soft": selected.accentSoft,
+    "--shift-text": selected.text,
+  };
+}
+
 function buildPageItems(currentPage, totalPages) {
   if (totalPages <= 1) return [1];
 
@@ -374,6 +452,17 @@ export default function Admin() {
         note: "Turnos marcados como finalizados",
       },
     ];
+  }, [shifts]);
+
+  const orderedShifts = useMemo(() => {
+    return [...shifts].sort((a, b) => {
+      const left = getShiftSortKey(a);
+      const right = getShiftSortKey(b);
+
+      if (left < right) return -1;
+      if (left > right) return 1;
+      return 0;
+    });
   }, [shifts]);
 
   const handleResetFilters = () => {
@@ -993,52 +1082,94 @@ export default function Admin() {
             </div>
 
             <div className="shift-list">
-              {shifts.length > 0 ? (
-                shifts.map((shift) => (
-                  <article className="shift-card" key={shift.id}>
-                    <div className="shift-card__header">
-                      <div>
-                        <h3 className="shift-card__title">{shift.vigilante}</h3>
-                        <p className="shift-card__meta">
-                          {formatDateLabel(shift.fecha)} | {shift.hora_inicio} - {shift.hora_fin}
-                        </p>
+              {orderedShifts.length > 0 ? (
+                orderedShifts.map((shift) => {
+                  const accentStyle = getShiftAccentStyle(shift.vigilante);
+                  const duration = getShiftDurationMinutes(shift);
+                  const left = Math.max(0, Math.min(100, (getTimeMinutes(shift.hora_inicio) / 1440) * 100));
+                  const width = Math.max(
+                    6,
+                    Math.min(100 - left, (Math.max(1, duration) / 1440) * 100)
+                  );
+
+                  return (
+                    <article
+                      className="shift-card shift-card--agenda"
+                      key={shift.id}
+                      style={accentStyle}
+                    >
+                      <span className="shift-card__band" />
+                      <div className="shift-card__header">
+                        <div>
+                          <span className="shift-card__eyebrow">Horario asignado</span>
+                          <h3 className="shift-card__title">{shift.vigilante}</h3>
+                          <p className="shift-card__meta">
+                            {formatDateLabel(shift.fecha)} | {shift.hora_inicio} - {shift.hora_fin}
+                          </p>
+                        </div>
+                        <span
+                          className={`status-tag ${
+                            shift.status === "completado"
+                              ? "status-tag--mint"
+                              : "status-tag--amber"
+                          }`}
+                        >
+                          {shift.status === "completado" ? "Completado" : "Programado"}
+                        </span>
                       </div>
-                      <span
-                        className={`status-tag ${
-                          shift.status === "completado"
-                            ? "status-tag--mint"
-                            : "status-tag--amber"
-                        }`}
-                      >
-                        {shift.status === "completado" ? "Completado" : "Programado"}
-                      </span>
-                    </div>
 
-                    <p className="shift-card__body">
-                      <strong>Puesto:</strong> {shift.puesto}
-                    </p>
-                    {shift.observaciones ? (
-                      <p className="shift-card__notes">{shift.observaciones}</p>
-                    ) : null}
+                      <div className="shift-card__timeline">
+                        <div className="shift-timeline">
+                          <div className="shift-timeline__labels">
+                            <span>{shift.hora_inicio}</span>
+                            <span>{shift.hora_fin}</span>
+                          </div>
+                          <div className="shift-timeline__track">
+                            <span
+                              className="shift-timeline__fill"
+                              style={{
+                                left: `${left}%`,
+                                width: `${width}%`,
+                              }}
+                            />
+                          </div>
+                          <div className="shift-timeline__legend">
+                            <span className="shift-timeline__pill">
+                              <strong>Puesto:</strong> {shift.puesto}
+                            </span>
+                            <span className="shift-timeline__pill shift-timeline__pill--soft">
+                              <strong>Duración:</strong> {formatDuration(duration)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
 
-                    <div className="shift-card__actions">
-                      <button
-                        type="button"
-                        className="button button--ghost"
-                        onClick={() => toggleShiftStatus(shift.id)}
-                      >
-                        {shift.status === "completado" ? "Reabrir" : "Marcar completado"}
-                      </button>
-                      <button
-                        type="button"
-                        className="button button--soft"
-                        onClick={() => removeShift(shift.id)}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </article>
-                ))
+                      <p className="shift-card__body">
+                        <strong>Puesto:</strong> {shift.puesto}
+                      </p>
+                      {shift.observaciones ? (
+                        <p className="shift-card__notes">{shift.observaciones}</p>
+                      ) : null}
+
+                      <div className="shift-card__actions">
+                        <button
+                          type="button"
+                          className="button button--ghost"
+                          onClick={() => toggleShiftStatus(shift.id)}
+                        >
+                          {shift.status === "completado" ? "Reabrir" : "Marcar completado"}
+                        </button>
+                        <button
+                          type="button"
+                          className="button button--soft"
+                          onClick={() => removeShift(shift.id)}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })
               ) : (
                 <div className="empty-state">Aun no hay turnos guardados.</div>
               )}
