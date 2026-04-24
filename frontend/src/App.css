@@ -1526,13 +1526,28 @@
 .time-cell {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   color: #334155;
-  font-weight: 700;
 }
 
-.time-cell small {
+.time-cell__label {
   color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.time-cell__value {
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.time-cell__sub {
+  color: #64748b;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 

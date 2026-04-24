@@ -34,10 +34,12 @@ function getInitials(name) {
     .join("");
 }
 
-function formatTime(value) {
-  if (!value) return "--:--";
+function formatDateTime(value) {
+  if (!value) return "--";
 
   return new Intl.DateTimeFormat("es-CO", {
+    day: "2-digit",
+    month: "short",
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
@@ -295,7 +297,7 @@ export default function Dashboard() {
                       <th>Persona</th>
                       <th>Tipo</th>
                       <th>Destino</th>
-                      <th>Hora</th>
+                      <th>Fecha y hora</th>
                       <th>Estado</th>
                       <th />
                     </tr>
@@ -303,8 +305,8 @@ export default function Dashboard() {
                   <tbody>
                     {visibleIngresos.map((item, index) => {
                       const initials = getInitials(item.nombre);
-                      const entradaHora = formatTime(item.fecha_ingreso);
-                      const salidaHora = formatTime(item.hora_salida);
+                      const entradaFechaHora = formatDateTime(item.fecha_ingreso);
+                      const salidaFechaHora = formatDateTime(item.hora_salida);
                       const hasVehicle =
                         item.tiene_vehiculo === true || item.tiene_vehiculo === "true";
 
@@ -340,11 +342,14 @@ export default function Dashboard() {
                           </td>
                           <td>
                             <div className="time-cell">
-                              <span>{entradaHora}</span>
+                              <span className="time-cell__label">Entrada</span>
+                              <strong className="time-cell__value">{entradaFechaHora}</strong>
                               {item.hora_salida ? (
-                                <small>Salida {salidaHora}</small>
+                                <small className="time-cell__sub">
+                                  Salida {salidaFechaHora}
+                                </small>
                               ) : (
-                                <small>Entrada</small>
+                                <small className="time-cell__sub">Sin salida registrada</small>
                               )}
                             </div>
                           </td>
