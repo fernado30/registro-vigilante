@@ -83,7 +83,17 @@ export function getPagoAdministracionVencimiento(fechaPago, vigenciaDias = PAGO_
 }
 
 export function getPagoAdministracionVencimientoEstado(item, referenceDate = new Date()) {
-  if (!isPagoAdministracionPagado(item?.pago_administracion) || !item?.fecha_pago_administracion) {
+  if (isPagoAdministracionPagado(item?.pago_administracion)) {
+    return {
+      label: "Pagado",
+      tone: "mint",
+      dueDate: toValidDate(item?.fecha_pago_administracion),
+      daysLeft: null,
+      warning: false,
+    };
+  }
+
+  if (!item?.fecha_pago_administracion) {
     return {
       label: "Sin pago",
       tone: "muted",
