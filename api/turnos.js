@@ -62,9 +62,13 @@ const isValidDateRange = (start, end) => {
 
 export default async function handler(req, res) {
   try {
+    console.log("🔵 Turnos API - Método:", req.method);
+    console.log("🔵 Turnos API - Body recibido:", JSON.stringify(req.body));
+
     const supabase = getSupabaseAdmin();
 
     if (req.method === "GET") {
+      console.log("📖 GET - Obteniendo turnos...");
       const { data, error } = await supabase
         .from("turnos")
         .select("*")
@@ -73,10 +77,12 @@ export default async function handler(req, res) {
         .order("hora_inicio", { ascending: true });
 
       if (error) {
+        console.error("❌ GET Error:", error);
         if (isSchemaError(error)) throw new Error(missingTableMessage);
         throw error;
       }
 
+      console.log("✅ GET Success - Turnos:", data?.length || 0);
       return res.status(200).json({
         success: true,
         data,
@@ -84,12 +90,16 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
+      console.log("📝 POST - Guardando nuevo turno...");
       const payload = normalizeTurnoPayload(req.body || {});
+      
+      console.log("🔄 Payload normalizado:", JSON.stringify(payload));
 
       if (!payload.vigilante || !payload.fecha || !payload.fecha_fin || !payload.hora_inicio || !payload.hora_fin) {
+        console.error("❌ Validación fallida - Faltan campos");
         return res.status(400).json({
           success: false,
-          error: "Debes enviar vigilante, fecha_inicio, fecha_fin, hora_inicio y hora_fin.",
+          error: `Faltan campos requeridos. Recibido: vigilante="${payload.vigilante}", fecha="${payload.fecha}", fecha_fin="${payload.fecha_fin}", hora_inicio="${payload.hora_inicio}", hora_fin="${payload.hora_fin}"`,
         });
       }
 
@@ -98,12 +108,27 @@ export default async function handler(req, res) {
         !isValidTime(payload.hora_inicio) ||
         !isValidTime(payload.hora_fin)
       ) {
+        const isValidDate = isValidDateRange(payload.fecha, payload.fecha_fin);
+        const isValidStart = isValidTime(payload.hora_inicio);
+        const isValidEnd = isValidTime(payload.hora_fin);
+        
+        console.error("❌ Validación de fechas/horas fallida", {
+          isValidDate,
+          isValidStart,
+          isValidEnd,
+          fecha: payload.fecha,
+          fecha_fin: payload.fecha_fin,
+          hora_inicio: payload.hora_inicio,
+          hora_fin: payload.hora_fin,
+        });
+        
         return res.status(400).json({
           success: false,
-          error: "Las fechas deben tener formato YYYY-MM-DD, el rango ser válido y las horas formato HH:MM.",
+          error: `Validación fallida - Fechas: ${isValidDate}, Hora inicio: ${isValidStart}, Hora fin: ${isValidEnd}. Formato debe ser YYYY-MM-DD para fechas y HH:MM para horas.`,
         });
       }
 
+      console.log("✅ Validación exitosa - Insertando turno...");
       const { data, error } = await supabase
         .from("turnos")
         .insert([payload])
@@ -111,10 +136,12 @@ export default async function handler(req, res) {
         .single();
 
       if (error) {
+        console.error("❌ Error al insertar:", error);
         if (isSchemaError(error)) throw new Error(missingTableMessage);
         throw error;
       }
 
+      console.log("✅ POST Success - Turno guardado:", data);
       return res.status(201).json({
         success: true,
         data,

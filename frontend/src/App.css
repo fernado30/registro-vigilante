@@ -3746,12 +3746,71 @@ body,
   margin: 0 2px 4px;
 }
 
+.turnos-calendar .fc .fc-daygrid-day.turnos-calendar__day-cell--assigned .fc-daygrid-day-frame {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
+    var(--turno-surface, rgba(109, 141, 255, 0.08));
+}
+
+.turnos-calendar .fc .fc-daygrid-day.turnos-calendar__day-cell--assigned .fc-daygrid-day-top {
+  padding: 6px 6px 0;
+}
+
 .turnos-calendar__fc-event {
   width: 100%;
 }
 
 .turnos-calendar__fc-event--done {
   opacity: 0.84;
+}
+
+.turnos-calendar__day-cell {
+  display: grid;
+  gap: 6px;
+  min-height: 100%;
+}
+
+.turnos-calendar__day-number {
+  color: var(--turno-text, #334155);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.turnos-calendar__day-badges {
+  display: flex;
+  align-items: flex-start;
+}
+
+.turnos-calendar__day-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--shift-border, rgba(148, 163, 184, 0.22));
+  background: var(--shift-surface, rgba(255, 255, 255, 0.78));
+  color: var(--shift-text, #1d4ed8);
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.turnos-calendar__day-badge-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.turnos-calendar__day-badge-count {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #475569;
+  font-size: 0.62rem;
+  font-weight: 900;
 }
 
 .turnos-calendar__event {

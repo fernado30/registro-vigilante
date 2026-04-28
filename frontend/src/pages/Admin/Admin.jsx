@@ -120,6 +120,27 @@ function getTurnoDateTime(fecha, hora) {
   return `${fecha}T${hora}:00`;
 }
 
+function getDateSequence(startValue, endValue) {
+  if (!startValue) return [];
+
+  const start = new Date(`${startValue}T00:00:00`);
+  const end = new Date(`${(endValue || startValue)}T00:00:00`);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+    return [startValue];
+  }
+
+  const values = [];
+  const current = new Date(start);
+
+  while (current <= end) {
+    values.push(formatDateInputValue(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  return values.filter(Boolean);
+}
+
 function getTurnoStartDate(turno) {
   return turno?.fecha_inicio || turno?.fecha || "";
 }
@@ -586,6 +607,26 @@ export default function Admin() {
     });
   }, [orderedTurnos]);
 
+  const turnosByDay = useMemo(() => {
+    const dayMap = new Map();
+
+    orderedTurnos.forEach((turno) => {
+      const style = getShiftAccentStyle(turno.vigilante);
+      const dates = getDateSequence(getTurnoStartDate(turno), getTurnoEndDate(turno));
+
+      dates.forEach((dateKey) => {
+        const current = dayMap.get(dateKey) || [];
+        current.push({
+          turno,
+          style,
+        });
+        dayMap.set(dateKey, current);
+      });
+    });
+
+    return dayMap;
+  }, [orderedTurnos]);
+
   const editingTurno = useMemo(() => {
     return turnos.find((item) => item.id === selectedTurnoId) || null;
   }, [selectedTurnoId, turnos]);
@@ -875,6 +916,10 @@ export default function Admin() {
     const turno = arg.event.extendedProps.turno;
     const accentStyle = arg.event.extendedProps.accentStyle || getShiftAccentStyle(turno.vigilante);
 
+    if (arg.view.type === "dayGridMonth") {
+      return null;
+    }
+
     return (
       <div className="turnos-calendar__event" style={accentStyle}>
         <div className="turnos-calendar__event-head">
@@ -887,6 +932,57 @@ export default function Admin() {
         ) : null}
       </div>
     );
+  };
+
+  const renderTurnoDayCell = (arg) => {
+    if (arg.view.type !== "dayGridMonth") return null;
+
+    const dateKey = formatDateInputValue(arg.date);
+    const items = turnosByDay.get(dateKey) || [];
+    const highlighted = items[0] || null;
+    const leadName = highlighted?.turno?.vigilante || "Sin asignar";
+
+    return (
+      <div
+        className={`turnos-calendar__day-cell ${
+          items.length ? "turnos-calendar__day-cell--assigned" : ""
+        }`}
+        style={highlighted ? highlighted.style : undefined}
+        >
+          <div className="turnos-calendar__day-number">{arg.dayNumberText}</div>
+
+        {items.length ? (
+          <div className="turnos-calendar__day-badges">
+            <span
+              className="turnos-calendar__day-badge"
+              style={highlighted?.style}
+              title={items.map((item) => item.turno.vigilante || "Sin asignar").join(", ")}
+            >
+              <span className="turnos-calendar__day-badge-name">{leadName}</span>
+              {items.length > 1 ? (
+                <span className="turnos-calendar__day-badge-count">+{items.length - 1}</span>
+              ) : null}
+            </span>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const paintTurnoDayCell = (arg) => {
+    if (arg.view.type !== "dayGridMonth") return;
+
+    const dateKey = formatDateInputValue(arg.date);
+    const items = turnosByDay.get(dateKey) || [];
+
+    if (!items.length) return;
+
+    const { style } = items[0];
+    const root = arg.el;
+
+    root.style.setProperty("--turno-border", style["--shift-border"]);
+    root.style.setProperty("--turno-surface", style["--shift-surface"]);
+    root.style.setProperty("--turno-text", style["--shift-text"]);
   };
 
   const turnosContext = turnosLoading ? (
@@ -1384,6 +1480,16 @@ export default function Admin() {
                   eventClick={handleCalendarEventClick}
                   dateClick={handleCalendarDateClick}
                   events={calendarEvents}
+                  dayCellContent={renderTurnoDayCell}
+                  dayCellClassNames={(arg) => {
+                    if (arg.view.type !== "dayGridMonth") return [];
+
+                    const dateKey = formatDateInputValue(arg.date);
+                    return turnosByDay.has(dateKey)
+                      ? ["turnos-calendar__day-cell--assigned"]
+                      : [];
+                  }}
+                  dayCellDidMount={paintTurnoDayCell}
                   eventContent={renderTurnoEvent}
                   eventClassNames={(arg) => [
                     "turnos-calendar__fc-event",
