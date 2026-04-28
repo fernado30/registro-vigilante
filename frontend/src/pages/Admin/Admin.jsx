@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import esLocale from "@fullcalendar/core/locales/es";
 import AppShell from "../../components/AppShell";
 import { api } from "../../services/api";
 import {
@@ -8,8 +13,6 @@ import {
   getTipoVisitaLabel,
 } from "../../utils/ingresos";
 import { downloadStructuredReportPdf } from "../../utils/pdfReport";
-
-const SHIFT_STORAGE_KEY = "vigilancia_pro_admin_shifts";
 
 function getTodayValue() {
   const now = new Date();
@@ -39,61 +42,6 @@ function getDateKey(value) {
   const day = `${date.getDate()}`.padStart(2, "0");
 
   return `${year}-${month}-${day}`;
-}
-
-function getMonthKey(value = new Date()) {
-  const date = value instanceof Date ? value : new Date(value);
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-
-  return `${year}-${month}`;
-}
-
-function getMonthLabel(monthKey) {
-  if (!monthKey) return "--";
-
-  const [year, month] = monthKey.split("-").map(Number);
-  if (!year || !month) return monthKey;
-
-  return new Intl.DateTimeFormat("es-CO", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(year, month - 1, 1));
-}
-
-function shiftMonth(monthKey, delta) {
-  if (!monthKey) return getMonthKey();
-
-  const [year, month] = monthKey.split("-").map(Number);
-  const date = new Date(year, month - 1 + delta, 1);
-  return getMonthKey(date);
-}
-
-function buildCalendarDays(monthKey) {
-  if (!monthKey) return [];
-
-  const [year, month] = monthKey.split("-").map(Number);
-  if (!year || !month) return [];
-
-  const firstDay = new Date(year, month - 1, 1);
-  const startOffset = firstDay.getDay();
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const cells = [];
-
-  for (let i = 0; i < startOffset; i += 1) {
-    cells.push(null);
-  }
-
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    const dayKey = `${year}-${`${month}`.padStart(2, "0")}-${`${day}`.padStart(2, "0")}`;
-    cells.push(dayKey);
-  }
-
-  while (cells.length % 7 !== 0) {
-    cells.push(null);
-  }
-
-  return cells;
 }
 
 function formatDateLabel(value) {
@@ -126,31 +74,49 @@ function formatDuration(minutes) {
   return `${hours} h ${rest.toString().padStart(2, "0")} min`;
 }
 
-function getTimeMinutes(value) {
-  if (!value || !value.includes(":")) return 0;
+function formatDateInputValue(value) {
+  if (!value) return "";
 
-  const [hours, minutes] = value.split(":").map((part) => Number(part));
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) return 0;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
 
-  return hours * 60 + minutes;
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
-function getShiftDurationMinutes(shift) {
-  const start = getTimeMinutes(shift?.hora_inicio);
-  const end = getTimeMinutes(shift?.hora_fin);
+function formatTimeInputValue(value) {
+  if (!value) return "";
 
-  if (!start || !end) return 0;
-  return Math.max(0, end - start);
-}
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
 
-function getShiftSortKey(shift) {
-  return `${shift?.fecha || ""} ${shift?.hora_inicio || ""}`;
+  const hours = `${date.getHours()}`.padStart(2, "0");
+  const minutes = `${date.getMinutes()}`.padStart(2, "0");
+
+  return `${hours}:${minutes}`;
 }
 
 function getStringHash(value) {
   return `${value || ""}`
     .split("")
     .reduce((acc, char) => acc * 31 + char.charCodeAt(0), 7);
+}
+
+function getTurnoDateTime(fecha, hora) {
+  if (!fecha || !hora) return null;
+  return `${fecha}T${hora}:00`;
+}
+
+function getTurnoRange(turno) {
+  if (!turno?.fecha || !turno?.hora_inicio || !turno?.hora_fin) return "--";
+  return `${turno.hora_inicio} - ${turno.hora_fin}`;
+}
+
+function getShiftSortKey(shift) {
+  return `${shift?.fecha || ""} ${shift?.hora_inicio || ""}`;
 }
 
 function getShiftAccentStyle(vigilante) {
@@ -227,38 +193,10 @@ function buildPageItems(currentPage, totalPages) {
   return items;
 }
 
-function safeParseShifts(value) {
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function loadStoredShifts() {
-  if (typeof window === "undefined") return [];
-
-  return safeParseShifts(window.localStorage.getItem(SHIFT_STORAGE_KEY) || "[]");
-}
-
-function saveStoredShifts(shifts) {
-  if (typeof window === "undefined") return;
-
-  window.localStorage.setItem(SHIFT_STORAGE_KEY, JSON.stringify(shifts));
-}
-
 function SearchIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="search-shell__svg">
-      <circle
-        cx="11"
-        cy="11"
-        r="6.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
+      <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
       <path
         d="M16 16l4 4"
         fill="none"
@@ -297,6 +235,16 @@ function getPercent(value, total) {
   return Math.max(8, Math.round((value / total) * 100));
 }
 
+const baseTurnoForm = {
+  vigilante: "",
+  fecha: getTodayValue(),
+  hora_inicio: "07:00",
+  hora_fin: "15:00",
+  puesto: "Porteria principal",
+  observaciones: "",
+  status: "programado",
+};
+
 export default function Admin() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -307,28 +255,31 @@ export default function Admin() {
   const [selectedVigilante, setSelectedVigilante] = useState("todos");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  const [shifts, setShifts] = useState(() => loadStoredShifts());
-  const [savingShift, setSavingShift] = useState(false);
-  const [shiftForm, setShiftForm] = useState({
-    vigilante: "",
-    fecha: getTodayValue(),
-    hora_inicio: "07:00",
-    hora_fin: "15:00",
-    puesto: "Porteria principal",
-    observaciones: "",
-  });
-  const [selectedCalendarMonth, setSelectedCalendarMonth] = useState(() => getMonthKey());
+
+  const [turnos, setTurnos] = useState([]);
+  const [turnosLoading, setTurnosLoading] = useState(true);
+  const [turnosError, setTurnosError] = useState("");
+  const [savingTurno, setSavingTurno] = useState(false);
+  const [selectedTurnoId, setSelectedTurnoId] = useState("");
+  const [turnoForm, setTurnoForm] = useState(baseTurnoForm);
+  const [isTurnoModalOpen, setIsTurnoModalOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
 
     async function load() {
-      const res = await api("/ingresos");
+      try {
+        const res = await api("/ingresos");
 
-      if (!active) return;
+        if (!active) return;
 
-      setData(res.success && Array.isArray(res.data) ? res.data : []);
-      setLoading(false);
+        setData(res.success && Array.isArray(res.data) ? res.data : []);
+      } catch {
+        if (!active) return;
+        setData([]);
+      } finally {
+        if (active) setLoading(false);
+      }
     }
 
     load();
@@ -338,9 +289,61 @@ export default function Admin() {
     };
   }, []);
 
+  const refreshTurnos = async () => {
+    try {
+      setTurnosLoading(true);
+      setTurnosError("");
+      const res = await api("/turnos");
+
+      if (res.success && Array.isArray(res.data)) {
+        setTurnos(res.data);
+      } else {
+        setTurnos([]);
+        setTurnosError(res.error || "No se pudieron cargar los turnos.");
+      }
+    } catch (error) {
+      setTurnos([]);
+      setTurnosError(error.message || "No se pudieron cargar los turnos.");
+    } finally {
+      setTurnosLoading(false);
+    }
+  };
+
   useEffect(() => {
-    saveStoredShifts(shifts);
-  }, [shifts]);
+    let active = true;
+
+    async function load() {
+      try {
+        setTurnosLoading(true);
+        setTurnosError("");
+        const res = await api("/turnos");
+
+        if (!active) return;
+
+        if (res.success && Array.isArray(res.data)) {
+          setTurnos(res.data);
+        } else {
+          setTurnos([]);
+          setTurnosError(res.error || "No se pudieron cargar los turnos.");
+        }
+      } catch (error) {
+        if (!active) return;
+
+        setTurnos([]);
+        setTurnosError(error.message || "No se pudieron cargar los turnos.");
+      } finally {
+        if (active) {
+          setTurnosLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const vigilantes = useMemo(() => {
     const names = new Set();
@@ -351,16 +354,16 @@ export default function Admin() {
       }
     });
 
-    shifts.forEach((item) => {
+    turnos.forEach((item) => {
       if (item?.vigilante) {
         names.add(item.vigilante.trim());
       }
     });
 
     return Array.from(names).sort((a, b) => a.localeCompare(b, "es"));
-  }, [data, shifts]);
+  }, [data, turnos]);
 
-  const defaultShiftVigilante = vigilantes[0] || "";
+  const defaultTurnoVigilante = vigilantes[0] || "";
 
   const reportRows = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -487,31 +490,8 @@ export default function Admin() {
     },
   ];
 
-  const shiftStats = useMemo(() => {
-    const completed = shifts.filter((item) => item.status === "completado").length;
-    const pending = shifts.filter((item) => item.status !== "completado").length;
-
-    return [
-      {
-        label: "Turnos guardados",
-        value: shifts.length,
-        note: "Planificacion local del administrador",
-      },
-      {
-        label: "Pendientes",
-        value: pending,
-        note: "Turnos programados por cubrir",
-      },
-      {
-        label: "Completados",
-        value: completed,
-        note: "Turnos marcados como finalizados",
-      },
-    ];
-  }, [shifts]);
-
-  const orderedShifts = useMemo(() => {
-    return [...shifts].sort((a, b) => {
+  const orderedTurnos = useMemo(() => {
+    return [...turnos].sort((a, b) => {
       const left = getShiftSortKey(a);
       const right = getShiftSortKey(b);
 
@@ -519,29 +499,74 @@ export default function Admin() {
       if (left > right) return 1;
       return 0;
     });
-  }, [shifts]);
+  }, [turnos]);
 
-  const calendarDays = useMemo(() => buildCalendarDays(selectedCalendarMonth), [selectedCalendarMonth]);
+  const turnoStats = useMemo(() => {
+    const programados = turnos.filter((item) => item.status === "programado").length;
+    const enCurso = turnos.filter((item) => item.status === "en curso").length;
+    const completados = turnos.filter((item) => item.status === "completado").length;
 
-  const shiftsByDate = useMemo(() => {
-    const map = new Map();
+    return [
+      {
+        label: "Turnos guardados",
+        value: turnos.length,
+        note: "Sincronizados con Supabase",
+      },
+      {
+        label: "Programados",
+        value: programados,
+        note: "Pendientes por cubrir",
+      },
+      {
+        label: "En curso",
+        value: enCurso,
+        note: "Activos actualmente",
+      },
+      {
+        label: "Completados",
+        value: completados,
+        note: "Cerrados por el equipo",
+      },
+    ];
+  }, [turnos]);
 
-    orderedShifts.forEach((shift) => {
-      const key = getDateKey(shift.fecha);
-      if (!key) return;
+  const upcomingTurnos = useMemo(() => {
+    return orderedTurnos.slice(0, 6);
+  }, [orderedTurnos]);
 
-      const items = map.get(key) || [];
-      items.push(shift);
-      map.set(key, items);
+  const calendarEvents = useMemo(() => {
+    return orderedTurnos.map((turno) => {
+      const style = getShiftAccentStyle(turno.vigilante);
+
+      return {
+        id: turno.id,
+        title: turno.vigilante || "Sin asignar",
+        start: getTurnoDateTime(turno.fecha, turno.hora_inicio),
+        end: getTurnoDateTime(turno.fecha, turno.hora_fin),
+        allDay: false,
+        backgroundColor: "transparent",
+        borderColor: "transparent",
+        textColor: style["--shift-text"],
+        extendedProps: {
+          turno,
+          accentStyle: style,
+        },
+      };
     });
+  }, [orderedTurnos]);
 
-    map.forEach((items, key) => {
-      items.sort((a, b) => getTimeMinutes(a.hora_inicio) - getTimeMinutes(b.hora_inicio));
-      map.set(key, items);
+  const editingTurno = useMemo(() => {
+    return turnos.find((item) => item.id === selectedTurnoId) || null;
+  }, [selectedTurnoId, turnos]);
+
+  const resetTurnoForm = (overrides = {}) => {
+    setSelectedTurnoId("");
+    setTurnoForm({
+      ...baseTurnoForm,
+      vigilante: defaultTurnoVigilante,
+      ...overrides,
     });
-
-    return map;
-  }, [orderedShifts]);
+  };
 
   const handleResetFilters = () => {
     setSearchTerm("");
@@ -615,692 +640,951 @@ export default function Admin() {
     });
   };
 
-  const handleShiftChange = (event) => {
+  const handleTurnoChange = (event) => {
     const { name, value } = event.target;
 
-    setShiftForm((current) => ({
+    setTurnoForm((current) => ({
       ...current,
       [name]: value,
     }));
   };
 
-  const handleShiftSubmit = (event) => {
-    event.preventDefault();
-    setSavingShift(true);
-
-    const nextShift = {
-      id: `${Date.now()}`,
-      vigilante: (shiftForm.vigilante || defaultShiftVigilante).trim(),
-      fecha: shiftForm.fecha,
-      hora_inicio: shiftForm.hora_inicio,
-      hora_fin: shiftForm.hora_fin,
-      puesto: shiftForm.puesto.trim(),
-      observaciones: shiftForm.observaciones.trim(),
-      status: "programado",
-      created_at: new Date().toISOString(),
-    };
-
-    setShifts((current) => [nextShift, ...current]);
-    setShiftForm((current) => ({
-      ...current,
-      observaciones: "",
+  const handleCalendarDateClick = (info) => {
+    setSelectedTurnoId("");
+    setTurnoForm((current) => ({
+      ...baseTurnoForm,
+      vigilante: current.vigilante || defaultTurnoVigilante,
+      fecha: info.dateStr || getTodayValue(),
+      hora_inicio: current.hora_inicio || "07:00",
+      hora_fin: current.hora_fin || "15:00",
     }));
-    setSavingShift(false);
+    setIsTurnoModalOpen(true);
   };
 
-  const toggleShiftStatus = (id) => {
-    setShifts((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: item.status === "completado" ? "programado" : "completado",
-            }
-          : item
-      )
+  const openTurnoForEdit = (turno) => {
+    if (!turno) return;
+
+    setSelectedTurnoId(turno.id);
+    setTurnoForm({
+      vigilante: turno.vigilante || defaultTurnoVigilante,
+      fecha: turno.fecha || getTodayValue(),
+      hora_inicio: turno.hora_inicio || "07:00",
+      hora_fin: turno.hora_fin || "15:00",
+      puesto: turno.puesto || "Porteria principal",
+      observaciones: turno.observaciones || "",
+      status: turno.status || "programado",
+    });
+    setIsTurnoModalOpen(true);
+  };
+
+  const openTurnoForCreate = (fecha = getTodayValue()) => {
+    setSelectedTurnoId("");
+    setTurnoForm({
+      ...baseTurnoForm,
+      vigilante: defaultTurnoVigilante,
+      fecha,
+    });
+    setIsTurnoModalOpen(true);
+  };
+
+  const persistTurno = async (payload, method, id = null, options = {}) => {
+    const { resetForm = true } = options;
+    const response = await api("/turnos", method, id ? { id, ...payload } : payload);
+
+    if (!response.success) {
+      throw new Error(response.error || "No se pudo guardar el turno.");
+    }
+
+    await refreshTurnos();
+    if (resetForm) {
+      resetTurnoForm();
+    }
+  };
+
+  const handleTurnoSubmit = async (event) => {
+    event.preventDefault();
+    setSavingTurno(true);
+
+    const payload = {
+      vigilante: (turnoForm.vigilante || defaultTurnoVigilante).trim(),
+      fecha: turnoForm.fecha,
+      hora_inicio: turnoForm.hora_inicio,
+      hora_fin: turnoForm.hora_fin,
+      puesto: turnoForm.puesto.trim(),
+      observaciones: turnoForm.observaciones.trim(),
+      status: turnoForm.status,
+    };
+
+    try {
+      await persistTurno(payload, selectedTurnoId ? "PATCH" : "POST", selectedTurnoId || null);
+      setIsTurnoModalOpen(false);
+    } catch (error) {
+      setTurnosError(error.message || "No se pudo guardar el turno.");
+    } finally {
+      setSavingTurno(false);
+    }
+  };
+
+  const handleToggleTurnoStatus = async (turno) => {
+    if (!turno) return;
+
+    try {
+      const nextStatus = turno.status === "completado" ? "programado" : "completado";
+      await persistTurno({ ...turno, status: nextStatus }, "PATCH", turno.id, {
+        resetForm: false,
+      });
+    } catch (error) {
+      setTurnosError(error.message || "No se pudo actualizar el turno.");
+    }
+  };
+
+  const handleDeleteTurno = async (turnoId) => {
+    if (!turnoId) return;
+
+    const shouldDelete =
+      typeof window === "undefined" ||
+      window.confirm("¿Seguro que deseas eliminar este turno?");
+
+    if (!shouldDelete) return;
+
+    try {
+      const response = await api("/turnos", "DELETE", { id: turnoId });
+
+      if (!response.success) {
+        throw new Error(response.error || "No se pudo eliminar el turno.");
+      }
+
+      await refreshTurnos();
+      if (selectedTurnoId === turnoId) {
+        resetTurnoForm();
+        setIsTurnoModalOpen(false);
+      }
+    } catch (error) {
+      setTurnosError(error.message || "No se pudo eliminar el turno.");
+    }
+  };
+
+  const handleCalendarEventClick = (info) => {
+    const turno = info.event.extendedProps.turno;
+    openTurnoForEdit(turno);
+  };
+
+  const handleCancelTurnoEdit = () => {
+    setIsTurnoModalOpen(false);
+    resetTurnoForm();
+  };
+
+  const extractTurnoCalendarPayload = (event) => {
+    const turno = event?.extendedProps?.turno;
+
+    if (!turno) return null;
+
+    const nextFecha = formatDateInputValue(event.start || turno.fecha) || turno.fecha;
+    const nextHoraInicio = formatTimeInputValue(event.start || turno.hora_inicio) || turno.hora_inicio;
+    const nextHoraFin = formatTimeInputValue(event.end || turno.hora_fin) || turno.hora_fin;
+
+    return {
+      ...turno,
+      fecha: nextFecha,
+      hora_inicio: nextHoraInicio,
+      hora_fin: nextHoraFin,
+    };
+  };
+
+  const syncTurnoCalendarChange = async (info) => {
+    const payload = extractTurnoCalendarPayload(info.event);
+
+    if (!payload?.id) return;
+
+    try {
+      setSavingTurno(true);
+      await persistTurno(payload, "PATCH", payload.id, { resetForm: false });
+    } catch (error) {
+      info.revert();
+      setTurnosError(error.message || "No se pudo mover el turno.");
+    } finally {
+      setSavingTurno(false);
+    }
+  };
+
+  const renderTurnoEvent = (arg) => {
+    const turno = arg.event.extendedProps.turno;
+    const accentStyle = arg.event.extendedProps.accentStyle || getShiftAccentStyle(turno.vigilante);
+
+    return (
+      <div className="turnos-calendar__event" style={accentStyle}>
+        <div className="turnos-calendar__event-head">
+          <strong>{turno.vigilante || "Sin asignar"}</strong>
+          <span>{arg.timeText || getTurnoRange(turno)}</span>
+        </div>
+        <p className="turnos-calendar__event-meta">{turno.puesto || "Porteria principal"}</p>
+        {turno.status === "completado" ? (
+          <span className="turnos-calendar__event-badge">Completado</span>
+        ) : null}
+      </div>
     );
   };
 
-  const removeShift = (id) => {
-    setShifts((current) => current.filter((item) => item.id !== id));
-  };
+  const turnosContext = turnosLoading ? (
+    <div className="loading-state" style={{ marginTop: 20 }}>
+      <span className="skeleton skeleton--lg" />
+      <span className="skeleton skeleton--md" />
+      <span className="skeleton skeleton--lg" />
+      <span className="skeleton skeleton--sm" />
+    </div>
+  ) : null;
+
+  const turnoModalTitle = selectedTurnoId ? "Editar turno" : "Nuevo turno";
+  const turnoModalSubtitle = selectedTurnoId
+    ? "Ajusta fecha, hora, puesto o estado sin salir del dashboard."
+    : "Agenda un nuevo turno y sincronizalo con Supabase en segundos.";
 
   return (
     <AppShell>
       <main className="app-page admin-page">
-      <div className="app-page__backdrop" aria-hidden="true">
-        <span className="app-page__orb app-page__orb--one" />
-        <span className="app-page__orb app-page__orb--two" />
-        <span className="app-page__orb app-page__orb--three" />
-      </div>
+        <div className="app-page__backdrop" aria-hidden="true">
+          <span className="app-page__orb app-page__orb--one" />
+          <span className="app-page__orb app-page__orb--two" />
+          <span className="app-page__orb app-page__orb--three" />
+        </div>
 
-      <div className="page-shell">
-        <header className="page-header">
-          <div className="brand">
-            <div className="brand__mark admin-brand__mark">
-              <AdminIcon />
+        <div className="page-shell">
+          <header className="page-header">
+            <div className="brand">
+              <div className="brand__mark admin-brand__mark">
+                <AdminIcon />
+              </div>
+              <div>
+                <h1 className="brand__title">Administrador</h1>
+                <p className="brand__subtitle">Reportes, analitica y organizacion de turnos</p>
+              </div>
             </div>
+          </header>
+
+          <section className="panel admin-hero fade-up">
             <div>
-              <h1 className="brand__title">Administrador</h1>
-              <p className="brand__subtitle">Reportes, analitica y organizacion de turnos</p>
+              <span className="admin-hero__eyebrow">Acceso administrativo</span>
+              <h2 className="section-title admin-hero__title">
+                Controla reportes y turnos desde un solo lugar
+              </h2>
+              <p className="section-subtitle admin-hero__subtitle">
+                Filtra los ingresos por fecha, vigilante o tipo de visita y mantiene una
+                planeacion operativa de los vigilantes con FullCalendar y Supabase.
+              </p>
             </div>
-          </div>
-        </header>
-
-        <section className="panel admin-hero fade-up">
-          <div>
-            <span className="admin-hero__eyebrow">Acceso administrativo</span>
-            <h2 className="section-title admin-hero__title">Controla reportes y turnos desde un solo lugar</h2>
-            <p className="section-subtitle admin-hero__subtitle">
-              Filtra los ingresos por fecha, vigilante o tipo de visita y mantén una planeacion
-              operativa de los vigilantes.
-            </p>
-          </div>
-          <div className="admin-hero__badge">
-            <span className="admin-badge">
-              <span className="admin-badge__dot" />
-              Administracion activa
-            </span>
-          </div>
-        </section>
-
-        <section className="stats-grid stats-grid--compact admin-stats">
-          {dashboardCards.map((stat, index) => (
-            <article
-              key={stat.label}
-              className="stat-card fade-up"
-              style={{ animationDelay: `${index * 0.06}s` }}
-            >
-              <span className="stat-card__label">{stat.label}</span>
-              <p className="stat-card__value">{stat.value}</p>
-              <p className="stat-card__note">{stat.note}</p>
-            </article>
-          ))}
-        </section>
-
-        <section className="panel admin-toolbar fade-up">
-          <div className="admin-toolbar__filters">
-            <div className="field-group">
-              <label className="field-label" htmlFor="admin-date-from">
-                Desde
-              </label>
-              <input
-                id="admin-date-from"
-                className="input"
-                type="date"
-                value={dateFrom}
-                onChange={(e) => {
-                  setDateFrom(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-            <div className="field-group">
-              <label className="field-label" htmlFor="admin-date-to">
-                Hasta
-              </label>
-              <input
-                id="admin-date-to"
-                className="input"
-                type="date"
-                value={dateTo}
-                onChange={(e) => {
-                  setDateTo(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-            <div className="field-group">
-              <label className="field-label" htmlFor="admin-type">
-                Tipo
-              </label>
-              <select
-                id="admin-type"
-                className="select"
-                value={selectedType}
-                onChange={(e) => {
-                  setSelectedType(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                {typeOptions.map((type) => (
-                  <option key={type} value={type}>
-                    {type === "todos" ? "Todos los tipos" : getTipoVisitaLabel(type)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field-group">
-              <label className="field-label" htmlFor="admin-vigilante">
-                Vigilante
-              </label>
-              <select
-                id="admin-vigilante"
-                className="select"
-                value={selectedVigilante}
-                onChange={(e) => {
-                  setSelectedVigilante(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="todos">Todos los vigilantes</option>
-                {vigilantes.map((vigilante) => (
-                  <option key={vigilante} value={vigilante}>
-                    {vigilante}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="admin-toolbar__search">
-            <div className="search-shell admin-search">
-              <span className="search-shell__icon" aria-hidden="true">
-                <SearchIcon />
+            <div className="admin-hero__badge">
+              <span className="admin-badge">
+                <span className="admin-badge__dot" />
+                Administracion activa
               </span>
-              <input
-                className="search-shell__input"
-                type="search"
-                placeholder="Buscar por nombre, documento, apto, placa o vigilante"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
             </div>
-            <div className="admin-toolbar__actions">
-              <button className="button button--ghost" onClick={handleExport} disabled={loading}>
-                Exportar PDF
-              </button>
-              <button className="button button--soft" onClick={handleResetFilters}>
-                Limpiar filtros
-              </button>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="admin-grid admin-grid--two">
-          <article className="panel admin-section fade-up">
+          <section className="stats-grid stats-grid--compact admin-stats">
+            {dashboardCards.map((stat, index) => (
+              <article
+                key={stat.label}
+                className="stat-card fade-up"
+                style={{ animationDelay: `${index * 0.06}s` }}
+              >
+                <span className="stat-card__label">{stat.label}</span>
+                <p className="stat-card__value">{stat.value}</p>
+                <p className="stat-card__note">{stat.note}</p>
+              </article>
+            ))}
+          </section>
+
+          <section className="panel admin-toolbar fade-up">
+            <div className="admin-toolbar__filters">
+              <div className="field-group">
+                <label className="field-label" htmlFor="admin-date-from">
+                  Desde
+                </label>
+                <input
+                  id="admin-date-from"
+                  className="input"
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+              <div className="field-group">
+                <label className="field-label" htmlFor="admin-date-to">
+                  Hasta
+                </label>
+                <input
+                  id="admin-date-to"
+                  className="input"
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+              <div className="field-group">
+                <label className="field-label" htmlFor="admin-type">
+                  Tipo
+                </label>
+                <select
+                  id="admin-type"
+                  className="select"
+                  value={selectedType}
+                  onChange={(e) => {
+                    setSelectedType(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  {typeOptions.map((type) => (
+                    <option key={type} value={type}>
+                      {type === "todos" ? "Todos los tipos" : getTipoVisitaLabel(type)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field-group">
+                <label className="field-label" htmlFor="admin-vigilante">
+                  Vigilante
+                </label>
+                <select
+                  id="admin-vigilante"
+                  className="select"
+                  value={selectedVigilante}
+                  onChange={(e) => {
+                    setSelectedVigilante(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="todos">Todos los vigilantes</option>
+                  {vigilantes.map((vigilante) => (
+                    <option key={vigilante} value={vigilante}>
+                      {vigilante}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="admin-toolbar__search">
+              <div className="search-shell admin-search">
+                <span className="search-shell__icon" aria-hidden="true">
+                  <SearchIcon />
+                </span>
+                <input
+                  className="search-shell__input"
+                  type="search"
+                  placeholder="Buscar por nombre, documento, apto, placa o vigilante"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+              <div className="admin-toolbar__actions">
+                <button className="button button--ghost" onClick={handleExport} disabled={loading}>
+                  Exportar PDF
+                </button>
+                <button className="button button--soft" onClick={handleResetFilters}>
+                  Limpiar filtros
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="admin-grid admin-grid--two">
+            <article className="panel admin-section fade-up">
+              <div className="section-head">
+                <div>
+                  <h2 className="section-title">Distribucion de ingresos</h2>
+                  <p className="section-subtitle">
+                    Resume el comportamiento de los ingresos dentro del rango seleccionado.
+                  </p>
+                </div>
+                <div className="mini-note admin-mini-note">
+                  <strong>Rango:</strong> {formatDateLabel(dateFrom)} - {formatDateLabel(dateTo)}
+                </div>
+              </div>
+
+              <div className="admin-bars">
+                {typeBreakdown.length > 0 ? (
+                  typeBreakdown.map((item) => (
+                    <div className="report-bar" key={item.label}>
+                      <div className="report-bar__meta">
+                        <span>{getTipoVisitaLabel(item.label)}</span>
+                        <strong>{item.value}</strong>
+                      </div>
+                      <div className="report-bar__track">
+                        <span style={{ width: `${getPercent(item.value, reportRows.length)}%` }} />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="empty-state">No hay datos para mostrar en este rango.</div>
+                )}
+              </div>
+            </article>
+
+            <article className="panel admin-section fade-up">
+              <div className="section-head">
+                <div>
+                  <h2 className="section-title">Top vigilantes</h2>
+                  <p className="section-subtitle">
+                    Quien concentra mas ingresos en el periodo filtrado.
+                  </p>
+                </div>
+              </div>
+
+              <div className="admin-bars">
+                {topVigilantes.length > 0 ? (
+                  topVigilantes.map((item) => (
+                    <div className="report-bar" key={item.label}>
+                      <div className="report-bar__meta">
+                        <span>{item.label}</span>
+                        <strong>{item.value}</strong>
+                      </div>
+                      <div className="report-bar__track">
+                        <span style={{ width: `${getPercent(item.value, reportRows.length)}%` }} />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="empty-state">No hay vigilantes registrados para este reporte.</div>
+                )}
+              </div>
+            </article>
+          </section>
+
+          <section className="panel admin-section fade-up">
             <div className="section-head">
               <div>
-                <h2 className="section-title">Distribucion de ingresos</h2>
+                <h2 className="section-title">Ultimos ingresos filtrados</h2>
                 <p className="section-subtitle">
-                  Resume el comportamiento de los ingresos dentro del rango seleccionado.
+                  Vista rapida para revisar lo que esta entrando al residencial.
                 </p>
               </div>
               <div className="mini-note admin-mini-note">
-                <strong>Rango:</strong> {formatDateLabel(dateFrom)} - {formatDateLabel(dateTo)}
+                <strong>Registros:</strong> {reportRows.length}
               </div>
             </div>
 
-            <div className="admin-bars">
-              {typeBreakdown.length > 0 ? (
-                typeBreakdown.map((item) => (
-                  <div className="report-bar" key={item.label}>
-                    <div className="report-bar__meta">
-                      <span>{getTipoVisitaLabel(item.label)}</span>
-                      <strong>{item.value}</strong>
-                    </div>
-                    <div className="report-bar__track">
-                      <span
-                        style={{ width: `${getPercent(item.value, reportRows.length)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="empty-state">No hay datos para mostrar en este rango.</div>
-              )}
-            </div>
-          </article>
-
-          <article className="panel admin-section fade-up">
-            <div className="section-head">
-              <div>
-                <h2 className="section-title">Top vigilantes</h2>
-                <p className="section-subtitle">
-                  Quien concentra mas ingresos en el periodo filtrado.
-                </p>
+            {loading ? (
+              <div className="loading-state" style={{ marginTop: 20 }}>
+                <span className="skeleton skeleton--lg" />
+                <span className="skeleton skeleton--md" />
+                <span className="skeleton skeleton--lg" />
+                <span className="skeleton skeleton--sm" />
               </div>
-            </div>
+            ) : reportRows.length > 0 ? (
+              <div className="history-table-shell admin-table-shell">
+                <div className="history-table__meta">
+                  <span>{reportRows.length} registros</span>
+                  <span className="history-table__meta-detail">
+                    Mostrando {pageStart}-{pageEnd} de {reportRows.length}
+                  </span>
+                </div>
 
-            <div className="admin-bars">
-              {topVigilantes.length > 0 ? (
-                topVigilantes.map((item) => (
-                  <div className="report-bar" key={item.label}>
-                    <div className="report-bar__meta">
-                      <span>{item.label}</span>
-                      <strong>{item.value}</strong>
-                    </div>
-                    <div className="report-bar__track">
-                      <span style={{ width: `${getPercent(item.value, reportRows.length)}%` }} />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="empty-state">No hay vigilantes registrados para este reporte.</div>
-              )}
-            </div>
-          </article>
-        </section>
-
-        <section className="panel admin-section fade-up">
-          <div className="section-head">
-            <div>
-              <h2 className="section-title">Ultimos ingresos filtrados</h2>
-              <p className="section-subtitle">
-                Vista rapida para revisar lo que esta entrando al residencial.
-              </p>
-            </div>
-            <div className="mini-note admin-mini-note">
-              <strong>Registros:</strong> {reportRows.length}
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="loading-state" style={{ marginTop: 20 }}>
-              <span className="skeleton skeleton--lg" />
-              <span className="skeleton skeleton--md" />
-              <span className="skeleton skeleton--lg" />
-              <span className="skeleton skeleton--sm" />
-            </div>
-          ) : reportRows.length > 0 ? (
-            <div className="history-table-shell admin-table-shell">
-              <div className="history-table__meta">
-                <span>{reportRows.length} registros</span>
-                <span className="history-table__meta-detail">
-                  Mostrando {pageStart}-{pageEnd} de {reportRows.length}
-                </span>
-              </div>
-
-              <table className="history-table admin-table">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Tipo</th>
-                    <th>Apto</th>
-                    <th>Pago admin</th>
-                    <th>Fecha pago</th>
-                    <th>Entrada</th>
-                    <th>Salida</th>
-                    <th>Vigilante</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleRows.map((item, index) => (
-                    <tr key={item.id || `${item.nombre}-${index}`}>
-                      <td className="history-table__name">{item.nombre || "Sin nombre"}</td>
-                      <td>
-                        <span className={getTipoVisitaClass(item.tipo_visita)}>
-                          {getTipoVisitaLabel(item.tipo_visita)}
-                        </span>
-                      </td>
-                      <td>{item.apartamento_destino || "--"}</td>
-                      <td>
-                        <span className={getPagoAdministracionClass(item?.pago_administracion)}>
-                          {getPagoAdministracionLabel(item?.pago_administracion)}
-                        </span>
-                      </td>
-                      <td>{item.pago_administracion ? formatTime(item.fecha_pago_administracion) : "--"}</td>
-                      <td>{formatTime(item.fecha_ingreso)}</td>
-                      <td>
-                        {item.estado === "salio" ? (
-                          formatTime(item.hora_salida)
-                        ) : (
-                          <span className="status-tag status-tag--mint">Adentro</span>
-                        )}
-                      </td>
-                      <td>{item.vigilante || "Sin asignar"}</td>
+                <table className="history-table admin-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Tipo</th>
+                      <th>Apto</th>
+                      <th>Pago admin</th>
+                      <th>Fecha pago</th>
+                      <th>Entrada</th>
+                      <th>Salida</th>
+                      <th>Vigilante</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="history-pagination">
-                <div className="history-pagination__info">
-                  Pagina <strong>{effectiveCurrentPage}</strong> de <strong>{totalPages}</strong>
-                </div>
-
-                <div className="history-pagination__controls" aria-label="Paginacion del admin">
-                  <button
-                    type="button"
-                    className="history-pagination__button"
-                    onClick={() =>
-                      setCurrentPage((page) => Math.max(1, Math.min(totalPages, page - 1)))
-                    }
-                    disabled={effectiveCurrentPage === 1}
-                  >
-                    Anterior
-                  </button>
-
-                  {pageItems.map((item, index) =>
-                    item === "ellipsis" ? (
-                      <span key={`ellipsis-${index}`} className="history-pagination__ellipsis">
-                        ...
-                      </span>
-                    ) : (
-                      <button
-                        key={item}
-                        type="button"
-                        className={`history-pagination__button ${
-                          item === effectiveCurrentPage ? "history-pagination__button--active" : ""
-                        }`}
-                        onClick={() => setCurrentPage(item)}
-                        aria-current={item === effectiveCurrentPage ? "page" : undefined}
-                      >
-                        {item}
-                      </button>
-                    )
-                  )}
-
-                  <button
-                    type="button"
-                    className="history-pagination__button"
-                    onClick={() =>
-                      setCurrentPage((page) => Math.min(totalPages, Math.max(1, page + 1)))
-                    }
-                    disabled={effectiveCurrentPage === totalPages}
-                  >
-                    Siguiente
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="empty-state" style={{ marginTop: 20 }}>
-              No hay ingresos que coincidan con los filtros.
-            </div>
-          )}
-        </section>
-
-        <section className="admin-grid admin-grid--two">
-          <article className="panel admin-section fade-up">
-            <div className="section-head">
-              <div>
-                <h2 className="section-title">Organizar turnos</h2>
-                <p className="section-subtitle">
-                  Registra y controla los turnos de los vigilantes desde el panel.
-                </p>
-              </div>
-            </div>
-
-            <form className="form admin-form" onSubmit={handleShiftSubmit}>
-              <div className="form-grid admin-form-grid">
-                <div className="field-group">
-                  <label className="field-label" htmlFor="shift-vigilante">
-                    Vigilante
-                  </label>
-                  <select
-                    id="shift-vigilante"
-                    name="vigilante"
-                    className="select"
-                    value={shiftForm.vigilante || defaultShiftVigilante}
-                    onChange={handleShiftChange}
-                    required
-                  >
-                    {vigilantes.length > 0 ? null : (
-                      <option value="">No hay vigilantes registrados</option>
-                    )}
-                    {vigilantes.map((vigilante) => (
-                      <option key={vigilante} value={vigilante}>
-                        {vigilante}
-                      </option>
+                  </thead>
+                  <tbody>
+                    {visibleRows.map((item, index) => (
+                      <tr key={item.id || `${item.nombre}-${index}`}>
+                        <td className="history-table__name">{item.nombre || "Sin nombre"}</td>
+                        <td>
+                          <span className={getTipoVisitaClass(item.tipo_visita)}>
+                            {getTipoVisitaLabel(item.tipo_visita)}
+                          </span>
+                        </td>
+                        <td>{item.apartamento_destino || "--"}</td>
+                        <td>
+                          <span className={getPagoAdministracionClass(item?.pago_administracion)}>
+                            {getPagoAdministracionLabel(item?.pago_administracion)}
+                          </span>
+                        </td>
+                        <td>
+                          {item.pago_administracion ? formatTime(item.fecha_pago_administracion) : "--"}
+                        </td>
+                        <td>{formatTime(item.fecha_ingreso)}</td>
+                        <td>
+                          {item.estado === "salio" ? (
+                            formatTime(item.hora_salida)
+                          ) : (
+                            <span className="status-tag status-tag--mint">Adentro</span>
+                          )}
+                        </td>
+                        <td>{item.vigilante || "Sin asignar"}</td>
+                      </tr>
                     ))}
-                  </select>
-                </div>
+                  </tbody>
+                </table>
 
-                <div className="field-group">
-                  <label className="field-label" htmlFor="shift-fecha">
-                    Fecha
-                  </label>
-                  <input
-                    id="shift-fecha"
-                    name="fecha"
-                    type="date"
-                    className="input"
-                    value={shiftForm.fecha}
-                    onChange={handleShiftChange}
-                    required
-                  />
-                </div>
+                <div className="history-pagination">
+                  <div className="history-pagination__info">
+                    Pagina <strong>{effectiveCurrentPage}</strong> de <strong>{totalPages}</strong>
+                  </div>
 
-                <div className="field-group">
-                  <label className="field-label" htmlFor="shift-start">
-                    Hora inicio
-                  </label>
-                  <input
-                    id="shift-start"
-                    name="hora_inicio"
-                    type="time"
-                    className="input"
-                    value={shiftForm.hora_inicio}
-                    onChange={handleShiftChange}
-                    required
-                  />
-                </div>
+                  <div className="history-pagination__controls" aria-label="Paginacion del admin">
+                    <button
+                      type="button"
+                      className="history-pagination__button"
+                      onClick={() =>
+                        setCurrentPage((page) => Math.max(1, Math.min(totalPages, page - 1)))
+                      }
+                      disabled={effectiveCurrentPage === 1}
+                    >
+                      Anterior
+                    </button>
 
-                <div className="field-group">
-                  <label className="field-label" htmlFor="shift-end">
-                    Hora fin
-                  </label>
-                  <input
-                    id="shift-end"
-                    name="hora_fin"
-                    type="time"
-                    className="input"
-                    value={shiftForm.hora_fin}
-                    onChange={handleShiftChange}
-                    required
-                  />
-                </div>
+                    {pageItems.map((item, index) =>
+                      item === "ellipsis" ? (
+                        <span key={`ellipsis-${index}`} className="history-pagination__ellipsis">
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={item}
+                          type="button"
+                          className={`history-pagination__button ${
+                            item === effectiveCurrentPage ? "history-pagination__button--active" : ""
+                          }`}
+                          onClick={() => setCurrentPage(item)}
+                          aria-current={item === effectiveCurrentPage ? "page" : undefined}
+                        >
+                          {item}
+                        </button>
+                      )
+                    )}
 
-                <div className="field-group field-group--full">
-                  <label className="field-label" htmlFor="shift-puesto">
-                    Puesto
-                  </label>
-                  <select
-                    id="shift-puesto"
-                    name="puesto"
-                    className="select"
-                    value={shiftForm.puesto}
-                    onChange={handleShiftChange}
-                  >
-                    <option value="Porteria principal">Porteria principal</option>
-                    <option value="Parqueadero">Parqueadero</option>
-                    <option value="Ronda interna">Ronda interna</option>
-                    <option value="Apoyo operativo">Apoyo operativo</option>
-                  </select>
-                </div>
-
-                <div className="field-group field-group--full">
-                  <label className="field-label" htmlFor="shift-notes">
-                    Observaciones
-                  </label>
-                  <textarea
-                    id="shift-notes"
-                    name="observaciones"
-                    className="textarea"
-                    rows="4"
-                    placeholder="Ej. Cubrir descanso, apoyo en ingreso de visitantes, relevos..."
-                    value={shiftForm.observaciones}
-                    onChange={handleShiftChange}
-                  />
+                    <button
+                      type="button"
+                      className="history-pagination__button"
+                      onClick={() =>
+                        setCurrentPage((page) => Math.min(totalPages, Math.max(1, page + 1)))
+                      }
+                      disabled={effectiveCurrentPage === totalPages}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <button className="button button--primary" type="submit" disabled={savingShift}>
-                {savingShift ? "Guardando..." : "Agregar turno"}
-              </button>
-            </form>
-          </article>
-
-          <article className="panel admin-section fade-up">
-            <div className="section-head">
-              <div>
-                <h2 className="section-title">Turnos guardados</h2>
-                <p className="section-subtitle">
-                  Gestion local en el navegador, ideal para planificacion rapida.
-                </p>
+            ) : (
+              <div className="empty-state" style={{ marginTop: 20 }}>
+                No hay ingresos que coincidan con los filtros.
               </div>
-            </div>
+            )}
+          </section>
 
-            <div className="stats-grid stats-grid--compact admin-shift-stats">
-              {shiftStats.map((stat, index) => (
-                <article
-                  key={stat.label}
-                  className="stat-card fade-up"
-                  style={{ animationDelay: `${index * 0.06}s` }}
-                >
-                  <span className="stat-card__label">{stat.label}</span>
-                  <p className="stat-card__value">{stat.value}</p>
-                  <p className="stat-card__note">{stat.note}</p>
-                </article>
-              ))}
-            </div>
-
-            <div className="shift-calendar">
-              <div className="shift-calendar__header">
+          <section className="admin-grid admin-grid--two">
+            <article className="panel admin-section fade-up admin-section--summary">
+              <div className="section-head">
                 <div>
-                  <h3 className="shift-calendar__title">Calendario de turnos</h3>
-                  <p className="shift-calendar__subtitle">
-                    Los días con asignaciones se resaltan con el color del vigilante y muestran su
-                    rango horario.
+                  <h2 className="section-title">Panel de turnos</h2>
+                  <p className="section-subtitle">
+                    Usa el modal para crear o editar y arrastra los eventos para reprogramarlos.
                   </p>
                 </div>
-                <div className="shift-calendar__nav">
+                <div className="shift-card__actions admin-section__actions">
                   <button
                     type="button"
-                    className="history-pagination__button"
-                    onClick={() => setSelectedCalendarMonth((value) => shiftMonth(value, -1))}
+                    className="button button--primary"
+                    onClick={() => openTurnoForCreate()}
                   >
-                    Anterior
+                    Nuevo turno
                   </button>
-                  <span className="shift-calendar__month">{getMonthLabel(selectedCalendarMonth)}</span>
                   <button
                     type="button"
-                    className="history-pagination__button"
-                    onClick={() => setSelectedCalendarMonth((value) => shiftMonth(value, 1))}
+                    className="button button--ghost"
+                    onClick={refreshTurnos}
+                    disabled={turnosLoading}
                   >
-                    Siguiente
+                    {turnosLoading ? "Actualizando..." : "Refrescar"}
                   </button>
                 </div>
               </div>
 
-              <div className="shift-calendar__legend">
-                {vigilantes.slice(0, 5).map((vigilante) => {
+              <div className="turnos-summary-card">
+                <div className="turnos-summary-card__lead">
+                  <span className="turnos-summary-card__label">Edicion rapida</span>
+                  <p className="turnos-summary-card__title">
+                    Organiza turnos desde el calendario, sin perder contexto.
+                  </p>
+                  <p className="turnos-summary-card__text">
+                    Abre el modal para nuevos turnos y usa drag & drop o resize para mover
+                    directamente los bloques ya programados.
+                  </p>
+                </div>
+
+                <div className="stats-grid stats-grid--compact admin-shift-stats">
+                  {turnoStats.map((stat, index) => (
+                    <article
+                      key={stat.label}
+                      className="stat-card fade-up"
+                      style={{ animationDelay: `${index * 0.06}s` }}
+                    >
+                      <span className="stat-card__label">{stat.label}</span>
+                      <p className="stat-card__value">{stat.value}</p>
+                      <p className="stat-card__note">{stat.note}</p>
+                    </article>
+                  ))}
+                </div>
+
+                {turnosContext}
+
+                <div className="turnos-summary-card__hint">
+                  <strong>Atajo:</strong> haz clic en cualquier dia del calendario para abrir el modal
+                  con esa fecha precargada.
+                </div>
+              </div>
+            </article>
+
+            <article className="panel admin-section fade-up">
+              <div className="section-head">
+                <div>
+                  <h2 className="section-title">Calendario FullCalendar</h2>
+                  <p className="section-subtitle">
+                    Vista de agenda conectada a Supabase con colores por vigilante y CRUD directo.
+                  </p>
+                </div>
+                <div className="section-head__actions">
+                  <div className="mini-note admin-mini-note">
+                    <strong>Turnos:</strong> {turnos.length}
+                  </div>
+                  <button type="button" className="button button--ghost" onClick={() => openTurnoForCreate()}>
+                    Abrir modal
+                  </button>
+                </div>
+              </div>
+
+              <div className="turnos-legend">
+                {vigilantes.slice(0, 6).map((vigilante) => {
                   const style = getShiftAccentStyle(vigilante);
+
                   return (
-                    <span key={vigilante} className="shift-calendar__legend-item" style={style}>
-                      <span className="shift-calendar__legend-dot" />
+                    <span key={vigilante} className="turnos-legend__item" style={style}>
+                      <span className="turnos-legend__dot" />
                       {vigilante}
                     </span>
                   );
                 })}
               </div>
 
-              {calendarDays.length > 0 ? (
-                <div className="shift-calendar__grid">
-                  {["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"].map((day) => (
-                    <div key={day} className="shift-calendar__weekday">
-                      {day}
-                    </div>
-                  ))}
+              {turnosError ? <div className="empty-state">{turnosError}</div> : null}
 
-                  {calendarDays.map((dayKey, index) => {
-                    const dayShifts = dayKey ? shiftsByDate.get(dayKey) || [] : [];
-                    const isToday = dayKey === getTodayValue();
-
-                    return (
-                      <div
-                        key={dayKey || `blank-${index}`}
-                        className={`shift-calendar__day ${
-                          dayKey ? "shift-calendar__day--active" : "shift-calendar__day--empty"
-                        } ${isToday ? "shift-calendar__day--today" : ""}`}
-                      >
-                        {dayKey ? (
-                          <>
-                            <div className="shift-calendar__day-head">
-                              <strong>{dayKey.slice(8, 10)}</strong>
-                              {isToday ? <span>Hoy</span> : null}
-                            </div>
-                            <div className="shift-calendar__day-list">
-                              {dayShifts.length > 0 ? (
-                                dayShifts.map((shift) => {
-                                  const style = getShiftAccentStyle(shift.vigilante);
-                                  const duration = getShiftDurationMinutes(shift);
-                                  const left = Math.max(
-                                    0,
-                                    Math.min(100, (getTimeMinutes(shift.hora_inicio) / 1440) * 100)
-                                  );
-                                  const width = Math.max(
-                                    6,
-                                    Math.min(100 - left, (Math.max(1, duration) / 1440) * 100)
-                                  );
-
-                                  return (
-                                    <article
-                                      key={shift.id}
-                                      className={`shift-calendar__event ${
-                                        shift.status === "completado"
-                                          ? "shift-calendar__event--done"
-                                          : ""
-                                      }`}
-                                      style={style}
-                                    >
-                                      <div className="shift-calendar__event-header">
-                                        <strong>{shift.vigilante}</strong>
-                                        <span>
-                                          {shift.hora_inicio} - {shift.hora_fin}
-                                        </span>
-                                      </div>
-                                      <div className="shift-calendar__event-track">
-                                        <span
-                                          className="shift-calendar__event-fill"
-                                          style={{ left: `${left}%`, width: `${width}%` }}
-                                        />
-                                      </div>
-                                      <p className="shift-calendar__event-meta">
-                                        {shift.puesto}
-                                      </p>
-                                      <div className="shift-card__actions shift-calendar__event-actions">
-                                        <button
-                                          type="button"
-                                          className="button button--ghost"
-                                          onClick={() => toggleShiftStatus(shift.id)}
-                                        >
-                                          {shift.status === "completado"
-                                            ? "Reabrir"
-                                            : "Marcar completado"}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          className="button button--soft"
-                                          onClick={() => removeShift(shift.id)}
-                                        >
-                                          Eliminar
-                                        </button>
-                                      </div>
-                                    </article>
-                                  );
-                                })
-                              ) : (
-                                <div className="shift-calendar__empty">Sin turnos</div>
-                              )}
-                            </div>
-                          </>
-                        ) : null}
-                      </div>
-                    );
-                  })}
+              <div className="turnos-calendar">
+                <FullCalendar
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  locale={esLocale}
+                  firstDay={1}
+                  height="auto"
+                  expandRows
+                  nowIndicator
+                  selectable
+                  editable
+                  eventStartEditable
+                  eventDurationEditable
+                  eventDrop={syncTurnoCalendarChange}
+                  eventResize={syncTurnoCalendarChange}
+                  eventOverlap={false}
+                  dayMaxEvents={3}
+                  headerToolbar={{
+                    left: "prev,next today",
+                    center: "title",
+                    right: "dayGridMonth,timeGridWeek,timeGridDay",
+                  }}
+                  buttonText={{
+                    today: "Hoy",
+                    month: "Mes",
+                    week: "Semana",
+                    day: "Dia",
+                  }}
+                  slotMinTime="06:00:00"
+                  slotMaxTime="22:00:00"
+                  eventClick={handleCalendarEventClick}
+                  dateClick={handleCalendarDateClick}
+                  events={calendarEvents}
+                  eventContent={renderTurnoEvent}
+                  eventClassNames={(arg) => [
+                    "turnos-calendar__fc-event",
+                    arg.event.extendedProps.turno.status === "completado"
+                      ? "turnos-calendar__fc-event--done"
+                      : "",
+                  ]}
+                  />
                 </div>
-              ) : (
-                <div className="empty-state">Aun no hay turnos guardados.</div>
-              )}
+
+              <div className="turnos-side">
+                <div className="section-head turnos-side__head">
+                  <div>
+                    <h3 className="section-title">Proximos turnos</h3>
+                    <p className="section-subtitle">
+                      Atajos para editar, completar o eliminar registros sin salir del panel.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="stats-grid stats-grid--compact admin-shift-stats">
+                  {turnoStats.map((stat, index) => (
+                    <article
+                      key={stat.label}
+                      className="stat-card fade-up"
+                      style={{ animationDelay: `${index * 0.06}s` }}
+                    >
+                      <span className="stat-card__label">{stat.label}</span>
+                      <p className="stat-card__value">{stat.value}</p>
+                      <p className="stat-card__note">{stat.note}</p>
+                    </article>
+                  ))}
+                </div>
+
+                {turnosContext}
+
+                {!turnosLoading && upcomingTurnos.length > 0 ? (
+                  <div className="turnos-list">
+                    {upcomingTurnos.map((turno) => {
+                      const style = getShiftAccentStyle(turno.vigilante);
+
+                      return (
+                        <article key={turno.id} className="turnos-list__item" style={style}>
+                          <div className="turnos-list__head">
+                            <div>
+                              <strong>{turno.vigilante || "Sin asignar"}</strong>
+                              <p>{formatDateLabel(turno.fecha)}</p>
+                            </div>
+                            <span className={`status-tag status-tag--mint`}>
+                              {turno.status || "programado"}
+                            </span>
+                          </div>
+
+                          <p className="turnos-list__meta">
+                            {getTurnoRange(turno)} - {turno.puesto || "Porteria principal"}
+                          </p>
+                          {turno.observaciones ? (
+                            <p className="turnos-list__notes">{turno.observaciones}</p>
+                          ) : null}
+
+                          <div className="shift-card__actions turnos-list__actions">
+                            <button
+                              type="button"
+                              className="button button--ghost"
+                              onClick={() => openTurnoForEdit(turno)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="button button--soft"
+                              onClick={() => handleToggleTurnoStatus(turno)}
+                            >
+                              {turno.status === "completado" ? "Reabrir" : "Completar"}
+                            </button>
+                            <button
+                              type="button"
+                              className="button button--soft"
+                              onClick={() => handleDeleteTurno(turno.id)}
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : turnosLoading ? null : (
+                  <div className="empty-state">Aun no hay turnos sincronizados.</div>
+                )}
+              </div>
+            </article>
+          </section>
+
+          {isTurnoModalOpen ? (
+            <div
+              className="turno-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="turno-modal-title"
+              onClick={handleCancelTurnoEdit}
+            >
+              <div className="turno-modal__backdrop" />
+              <div className="turno-modal__card" onClick={(event) => event.stopPropagation()}>
+                <div className="turno-modal__header">
+                  <div>
+                    <p className="turno-modal__eyebrow">Planificacion operativa</p>
+                    <h3 id="turno-modal-title" className="turno-modal__title">
+                      {turnoModalTitle}
+                    </h3>
+                    <p className="turno-modal__subtitle">{turnoModalSubtitle}</p>
+                  </div>
+                  <button type="button" className="turno-modal__close" onClick={handleCancelTurnoEdit}>
+                    Cerrar
+                  </button>
+                </div>
+
+                {selectedTurnoId ? (
+                  <div className="turno-modal__selected">
+                    <span className="turno-modal__selected-label">Editando</span>
+                    <strong>{editingTurno?.vigilante || "Turno sin nombre"}</strong>
+                    <span>{editingTurno ? formatDateLabel(editingTurno.fecha) : "--"}</span>
+                  </div>
+                ) : null}
+
+                <form className="form admin-form turno-modal__form" onSubmit={handleTurnoSubmit}>
+                  <div className="turno-modal__grid">
+                    <div className="field-group">
+                      <label className="field-label" htmlFor="turno-vigilante">
+                        Vigilante
+                      </label>
+                      <input
+                        id="turno-vigilante"
+                        name="vigilante"
+                        className="input"
+                        list="vigilantes-sugeridos"
+                        value={turnoForm.vigilante || defaultTurnoVigilante}
+                        onChange={handleTurnoChange}
+                        placeholder="Nombre del vigilante"
+                        required
+                      />
+                      <datalist id="vigilantes-sugeridos">
+                        {vigilantes.map((vigilante) => (
+                          <option key={vigilante} value={vigilante} />
+                        ))}
+                      </datalist>
+                    </div>
+
+                    <div className="field-group">
+                      <label className="field-label" htmlFor="turno-fecha">
+                        Fecha
+                      </label>
+                      <input
+                        id="turno-fecha"
+                        name="fecha"
+                        type="date"
+                        className="input"
+                        value={turnoForm.fecha}
+                        onChange={handleTurnoChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="field-group">
+                      <label className="field-label" htmlFor="turno-start">
+                        Hora inicio
+                      </label>
+                      <input
+                        id="turno-start"
+                        name="hora_inicio"
+                        type="time"
+                        className="input"
+                        value={turnoForm.hora_inicio}
+                        onChange={handleTurnoChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="field-group">
+                      <label className="field-label" htmlFor="turno-end">
+                        Hora fin
+                      </label>
+                      <input
+                        id="turno-end"
+                        name="hora_fin"
+                        type="time"
+                        className="input"
+                        value={turnoForm.hora_fin}
+                        onChange={handleTurnoChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="field-group">
+                      <label className="field-label" htmlFor="turno-status">
+                        Estado
+                      </label>
+                      <select
+                        id="turno-status"
+                        name="status"
+                        className="select"
+                        value={turnoForm.status}
+                        onChange={handleTurnoChange}
+                      >
+                        <option value="programado">Programado</option>
+                        <option value="en curso">En curso</option>
+                        <option value="completado">Completado</option>
+                      </select>
+                    </div>
+
+                    <div className="field-group field-group--full">
+                      <label className="field-label" htmlFor="turno-puesto">
+                        Puesto
+                      </label>
+                      <select
+                        id="turno-puesto"
+                        name="puesto"
+                        className="select"
+                        value={turnoForm.puesto}
+                        onChange={handleTurnoChange}
+                      >
+                        <option value="Porteria principal">Porteria principal</option>
+                        <option value="Parqueadero">Parqueadero</option>
+                        <option value="Ronda interna">Ronda interna</option>
+                        <option value="Apoyo operativo">Apoyo operativo</option>
+                      </select>
+                    </div>
+
+                    <div className="field-group field-group--full">
+                      <label className="field-label" htmlFor="turno-notes">
+                        Observaciones
+                      </label>
+                      <textarea
+                        id="turno-notes"
+                        name="observaciones"
+                        className="textarea"
+                        rows="4"
+                        placeholder="Ej. Cubrir descanso, apoyo en ingreso de visitantes, relevos..."
+                        value={turnoForm.observaciones}
+                        onChange={handleTurnoChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="turno-modal__actions">
+                    <button className="button button--primary" type="submit" disabled={savingTurno}>
+                      {savingTurno
+                        ? "Guardando..."
+                        : selectedTurnoId
+                        ? "Actualizar turno"
+                        : "Agregar turno"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="button button--soft"
+                      onClick={handleCancelTurnoEdit}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </article>
-        </section>
-      </div>
+          ) : null}
+        </div>
       </main>
     </AppShell>
   );
