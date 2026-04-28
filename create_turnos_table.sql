@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS public.turnos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   vigilante TEXT NOT NULL,
   fecha DATE NOT NULL,
+  fecha_fin DATE NOT NULL,
   hora_inicio TIME NOT NULL,
   hora_fin TIME NOT NULL,
   puesto TEXT NOT NULL DEFAULT 'Porteria principal',
@@ -11,12 +12,14 @@ CREATE TABLE IF NOT EXISTS public.turnos (
   status TEXT NOT NULL DEFAULT 'programado',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT turnos_horas_validas CHECK (hora_fin > hora_inicio)
+  CONSTRAINT turnos_horas_validas CHECK (hora_fin > hora_inicio),
+  CONSTRAINT turnos_fecha_rango CHECK (fecha_fin >= fecha)
 );
 
 ALTER TABLE public.turnos
   ADD COLUMN IF NOT EXISTS vigilante TEXT NOT NULL DEFAULT 'Sin asignar',
   ADD COLUMN IF NOT EXISTS fecha DATE NOT NULL DEFAULT CURRENT_DATE,
+  ADD COLUMN IF NOT EXISTS fecha_fin DATE NOT NULL DEFAULT CURRENT_DATE,
   ADD COLUMN IF NOT EXISTS hora_inicio TIME NOT NULL DEFAULT '07:00',
   ADD COLUMN IF NOT EXISTS hora_fin TIME NOT NULL DEFAULT '15:00',
   ADD COLUMN IF NOT EXISTS puesto TEXT NOT NULL DEFAULT 'Porteria principal',
@@ -40,6 +43,15 @@ WHERE observaciones IS NULL;
 UPDATE public.turnos
 SET status = 'programado'
 WHERE status IS NULL OR trim(status) = '';
+
+UPDATE public.turnos
+SET fecha_fin = fecha;
+
+ALTER TABLE public.turnos
+  DROP CONSTRAINT IF EXISTS turnos_fecha_rango;
+
+ALTER TABLE public.turnos
+  ADD CONSTRAINT turnos_fecha_rango CHECK (fecha_fin >= fecha);
 
 ALTER TABLE public.turnos ENABLE ROW LEVEL SECURITY;
 

@@ -3780,7 +3780,7 @@ body,
   color: #475569;
   font-size: 0.7rem;
   font-weight: 700;
-  white-space: nowrap;
+  text-align: right;
 }
 
 .turnos-calendar__event-meta {

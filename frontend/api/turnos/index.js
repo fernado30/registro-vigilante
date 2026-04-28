@@ -36,7 +36,8 @@ const isSchemaError = (error) => {
 
 const normalizeTurnoPayload = (body) => ({
   vigilante: body.vigilante?.trim() || "Sin asignar",
-  fecha: body.fecha,
+  fecha: body.fecha_inicio || body.fecha || body.fechaInicio || body.fechaFin,
+  fecha_fin: body.fecha_fin || body.fechaFin || body.fechaInicio || body.fecha_inicio || body.fecha,
   hora_inicio: body.hora_inicio,
   hora_fin: body.hora_fin,
   puesto: body.puesto?.trim() || "Porteria principal",
@@ -55,6 +56,11 @@ const isValidTime = (value) => {
   return /^\d{2}:\d{2}$/.test(value);
 };
 
+const isValidDateRange = (start, end) => {
+  if (!isValidIsoDate(start) || !isValidIsoDate(end)) return false;
+  return end >= start;
+};
+
 export default async function handler(req, res) {
   try {
     const supabase = getSupabaseAdmin();
@@ -64,6 +70,7 @@ export default async function handler(req, res) {
         .from("turnos")
         .select("*")
         .order("fecha", { ascending: true })
+        .order("fecha_fin", { ascending: true })
         .order("hora_inicio", { ascending: true });
 
       if (error) {
@@ -80,17 +87,21 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
       const payload = normalizeTurnoPayload(req.body || {});
 
-      if (!payload.vigilante || !payload.fecha || !payload.hora_inicio || !payload.hora_fin) {
+      if (!payload.vigilante || !payload.fecha || !payload.fecha_fin || !payload.hora_inicio || !payload.hora_fin) {
         return res.status(400).json({
           success: false,
-          error: "Debes enviar vigilante, fecha, hora_inicio y hora_fin.",
+          error: "Debes enviar vigilante, fecha_inicio, fecha_fin, hora_inicio y hora_fin.",
         });
       }
 
-      if (!isValidIsoDate(payload.fecha) || !isValidTime(payload.hora_inicio) || !isValidTime(payload.hora_fin)) {
+      if (
+        !isValidDateRange(payload.fecha, payload.fecha_fin) ||
+        !isValidTime(payload.hora_inicio) ||
+        !isValidTime(payload.hora_fin)
+      ) {
         return res.status(400).json({
           success: false,
-          error: "La fecha debe tener formato YYYY-MM-DD y las horas formato HH:MM.",
+          error: "Las fechas deben tener formato YYYY-MM-DD, el rango ser válido y las horas formato HH:MM.",
         });
       }
 
@@ -123,17 +134,21 @@ export default async function handler(req, res) {
 
       const payload = normalizeTurnoPayload(rest);
 
-      if (!payload.vigilante || !payload.fecha || !payload.hora_inicio || !payload.hora_fin) {
+      if (!payload.vigilante || !payload.fecha || !payload.fecha_fin || !payload.hora_inicio || !payload.hora_fin) {
         return res.status(400).json({
           success: false,
-          error: "Debes enviar vigilante, fecha, hora_inicio y hora_fin.",
+          error: "Debes enviar vigilante, fecha_inicio, fecha_fin, hora_inicio y hora_fin.",
         });
       }
 
-      if (!isValidIsoDate(payload.fecha) || !isValidTime(payload.hora_inicio) || !isValidTime(payload.hora_fin)) {
+      if (
+        !isValidDateRange(payload.fecha, payload.fecha_fin) ||
+        !isValidTime(payload.hora_inicio) ||
+        !isValidTime(payload.hora_fin)
+      ) {
         return res.status(400).json({
           success: false,
-          error: "La fecha debe tener formato YYYY-MM-DD y las horas formato HH:MM.",
+          error: "Las fechas deben tener formato YYYY-MM-DD, el rango ser válido y las horas formato HH:MM.",
         });
       }
 

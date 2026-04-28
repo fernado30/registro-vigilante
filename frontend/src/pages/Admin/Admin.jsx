@@ -54,6 +54,16 @@ function formatDateLabel(value) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
+function formatDateRangeLabel(startValue, endValue) {
+  const start = startValue || "";
+  const end = endValue || start;
+
+  if (!start) return "--";
+  if (start === end) return formatDateLabel(start);
+
+  return `${formatDateLabel(start)} - ${formatDateLabel(end)}`;
+}
+
 function formatTime(value) {
   if (!value) return "--:--";
 
@@ -110,13 +120,31 @@ function getTurnoDateTime(fecha, hora) {
   return `${fecha}T${hora}:00`;
 }
 
+function getTurnoStartDate(turno) {
+  return turno?.fecha_inicio || turno?.fecha || "";
+}
+
+function getTurnoEndDate(turno) {
+  return turno?.fecha_fin || turno?.fecha_inicio || turno?.fecha || "";
+}
+
+function getTurnoSchedule(turno) {
+  const dateRange = formatDateRangeLabel(getTurnoStartDate(turno), getTurnoEndDate(turno));
+  const timeRange = getTurnoRange(turno);
+
+  if (dateRange === "--") return timeRange;
+  if (timeRange === "--") return dateRange;
+
+  return `${dateRange} · ${timeRange}`;
+}
+
 function getTurnoRange(turno) {
   if (!turno?.fecha || !turno?.hora_inicio || !turno?.hora_fin) return "--";
   return `${turno.hora_inicio} - ${turno.hora_fin}`;
 }
 
 function getShiftSortKey(shift) {
-  return `${shift?.fecha || ""} ${shift?.hora_inicio || ""}`;
+  return `${getTurnoStartDate(shift) || ""} ${shift?.hora_inicio || ""}`;
 }
 
 function getShiftAccentStyle(vigilante) {
@@ -238,6 +266,7 @@ function getPercent(value, total) {
 const baseTurnoForm = {
   vigilante: "",
   fecha: getTodayValue(),
+  fecha_fin: getTodayValue(),
   hora_inicio: "07:00",
   hora_fin: "15:00",
   puesto: "Porteria principal",
@@ -537,12 +566,14 @@ export default function Admin() {
   const calendarEvents = useMemo(() => {
     return orderedTurnos.map((turno) => {
       const style = getShiftAccentStyle(turno.vigilante);
+      const startDate = getTurnoStartDate(turno);
+      const endDate = getTurnoEndDate(turno);
 
       return {
         id: turno.id,
         title: turno.vigilante || "Sin asignar",
-        start: getTurnoDateTime(turno.fecha, turno.hora_inicio),
-        end: getTurnoDateTime(turno.fecha, turno.hora_fin),
+        start: getTurnoDateTime(startDate, turno.hora_inicio),
+        end: getTurnoDateTime(endDate, turno.hora_fin),
         allDay: false,
         backgroundColor: "transparent",
         borderColor: "transparent",
@@ -643,22 +674,49 @@ export default function Admin() {
   const handleTurnoChange = (event) => {
     const { name, value } = event.target;
 
-    setTurnoForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    setTurnoForm((current) => {
+      if (name === "fecha") {
+        const nextFechaFin = current.fecha_fin && current.fecha_fin < value ? value : current.fecha_fin;
+
+        return {
+          ...current,
+          fecha: value,
+          fecha_fin: nextFechaFin || value,
+        };
+      }
+
+      if (name === "fecha_fin") {
+        const nextFecha = current.fecha && value < current.fecha ? value : current.fecha;
+
+        return {
+          ...current,
+          fecha: nextFecha || value,
+          fecha_fin: value,
+        };
+      }
+
+      return {
+        ...current,
+        [name]: value,
+      };
+    });
   };
 
   const handleCalendarDateClick = (info) => {
-    setSelectedTurnoId("");
-    setTurnoForm((current) => ({
-      ...baseTurnoForm,
-      vigilante: current.vigilante || defaultTurnoVigilante,
-      fecha: info.dateStr || getTodayValue(),
-      hora_inicio: current.hora_inicio || "07:00",
-      hora_fin: current.hora_fin || "15:00",
-    }));
-    setIsTurnoModalOpen(true);
+    openTurnoForCreate(info.dateStr || getTodayValue(), info.dateStr || getTodayValue());
+  };
+
+  const handleCalendarSelect = (info) => {
+    const startDate = formatDateInputValue(info.start) || info.startStr || getTodayValue();
+    const endDate = info.end
+      ? info.allDay
+        ? formatDateInputValue(new Date(info.end.getTime() - 24 * 60 * 60 * 1000))
+        : formatDateInputValue(info.end)
+      : startDate;
+    const inclusiveEnd = endDate || startDate;
+
+    openTurnoForCreate(startDate, inclusiveEnd);
+    info.view.calendar.unselect();
   };
 
   const openTurnoForEdit = (turno) => {
@@ -667,7 +725,8 @@ export default function Admin() {
     setSelectedTurnoId(turno.id);
     setTurnoForm({
       vigilante: turno.vigilante || defaultTurnoVigilante,
-      fecha: turno.fecha || getTodayValue(),
+      fecha: getTurnoStartDate(turno) || getTodayValue(),
+      fecha_fin: getTurnoEndDate(turno) || getTurnoStartDate(turno) || getTodayValue(),
       hora_inicio: turno.hora_inicio || "07:00",
       hora_fin: turno.hora_fin || "15:00",
       puesto: turno.puesto || "Porteria principal",
@@ -677,12 +736,13 @@ export default function Admin() {
     setIsTurnoModalOpen(true);
   };
 
-  const openTurnoForCreate = (fecha = getTodayValue()) => {
+  const openTurnoForCreate = (fecha = getTodayValue(), fechaFin = fecha) => {
     setSelectedTurnoId("");
     setTurnoForm({
       ...baseTurnoForm,
       vigilante: defaultTurnoVigilante,
       fecha,
+      fecha_fin: fechaFin,
     });
     setIsTurnoModalOpen(true);
   };
@@ -708,6 +768,7 @@ export default function Admin() {
     const payload = {
       vigilante: (turnoForm.vigilante || defaultTurnoVigilante).trim(),
       fecha: turnoForm.fecha,
+      fecha_fin: turnoForm.fecha_fin || turnoForm.fecha,
       hora_inicio: turnoForm.hora_inicio,
       hora_fin: turnoForm.hora_fin,
       puesto: turnoForm.puesto.trim(),
@@ -779,13 +840,16 @@ export default function Admin() {
 
     if (!turno) return null;
 
-    const nextFecha = formatDateInputValue(event.start || turno.fecha) || turno.fecha;
+    const nextFecha = formatDateInputValue(event.start || getTurnoStartDate(turno)) || getTurnoStartDate(turno);
+    const nextFechaFin =
+      formatDateInputValue(event.end || getTurnoEndDate(turno)) || getTurnoEndDate(turno);
     const nextHoraInicio = formatTimeInputValue(event.start || turno.hora_inicio) || turno.hora_inicio;
     const nextHoraFin = formatTimeInputValue(event.end || turno.hora_fin) || turno.hora_fin;
 
     return {
       ...turno,
       fecha: nextFecha,
+      fecha_fin: nextFechaFin,
       hora_inicio: nextHoraInicio,
       hora_fin: nextHoraFin,
     };
@@ -815,7 +879,7 @@ export default function Admin() {
       <div className="turnos-calendar__event" style={accentStyle}>
         <div className="turnos-calendar__event-head">
           <strong>{turno.vigilante || "Sin asignar"}</strong>
-          <span>{arg.timeText || getTurnoRange(turno)}</span>
+          <span>{getTurnoSchedule(turno) || arg.timeText || getTurnoRange(turno)}</span>
         </div>
         <p className="turnos-calendar__event-meta">{turno.puesto || "Porteria principal"}</p>
         {turno.status === "completado" ? (
@@ -836,8 +900,8 @@ export default function Admin() {
 
   const turnoModalTitle = selectedTurnoId ? "Editar turno" : "Nuevo turno";
   const turnoModalSubtitle = selectedTurnoId
-    ? "Ajusta fecha, hora, puesto o estado sin salir del dashboard."
-    : "Agenda un nuevo turno y sincronizalo con Supabase en segundos.";
+    ? "Ajusta el rango de fechas, las horas, el puesto o el estado sin salir del dashboard."
+    : "Agenda un turno por rango de fechas y sincronizalo con Supabase en segundos.";
 
   return (
     <AppShell>
@@ -1296,6 +1360,7 @@ export default function Admin() {
                   expandRows
                   nowIndicator
                   selectable
+                  select={handleCalendarSelect}
                   editable
                   eventStartEditable
                   eventDurationEditable
@@ -1365,7 +1430,12 @@ export default function Admin() {
                           <div className="turnos-list__head">
                             <div>
                               <strong>{turno.vigilante || "Sin asignar"}</strong>
-                              <p>{formatDateLabel(turno.fecha)}</p>
+                              <p>
+                                {formatDateRangeLabel(
+                                  getTurnoStartDate(turno),
+                                  getTurnoEndDate(turno)
+                                )}
+                              </p>
                             </div>
                             <span className={`status-tag status-tag--mint`}>
                               {turno.status || "programado"}
@@ -1440,7 +1510,14 @@ export default function Admin() {
                   <div className="turno-modal__selected">
                     <span className="turno-modal__selected-label">Editando</span>
                     <strong>{editingTurno?.vigilante || "Turno sin nombre"}</strong>
-                    <span>{editingTurno ? formatDateLabel(editingTurno.fecha) : "--"}</span>
+                    <span>
+                      {editingTurno
+                        ? formatDateRangeLabel(
+                            getTurnoStartDate(editingTurno),
+                            getTurnoEndDate(editingTurno)
+                          )
+                        : "--"}
+                    </span>
                   </div>
                 ) : null}
 
@@ -1469,7 +1546,7 @@ export default function Admin() {
 
                     <div className="field-group">
                       <label className="field-label" htmlFor="turno-fecha">
-                        Fecha
+                        Fecha inicio
                       </label>
                       <input
                         id="turno-fecha"
@@ -1477,6 +1554,21 @@ export default function Admin() {
                         type="date"
                         className="input"
                         value={turnoForm.fecha}
+                        onChange={handleTurnoChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="field-group">
+                      <label className="field-label" htmlFor="turno-fecha-fin">
+                        Fecha fin
+                      </label>
+                      <input
+                        id="turno-fecha-fin"
+                        name="fecha_fin"
+                        type="date"
+                        className="input"
+                        value={turnoForm.fecha_fin}
                         onChange={handleTurnoChange}
                         required
                       />
