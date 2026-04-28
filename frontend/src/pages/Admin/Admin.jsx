@@ -313,6 +313,7 @@ export default function Admin() {
   const [selectedTurnoId, setSelectedTurnoId] = useState("");
   const [turnoForm, setTurnoForm] = useState(baseTurnoForm);
   const [isTurnoModalOpen, setIsTurnoModalOpen] = useState(false);
+  const [turnoVigilanteOpen, setTurnoVigilanteOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -413,7 +414,17 @@ export default function Admin() {
     return Array.from(names).sort((a, b) => a.localeCompare(b, "es"));
   }, [data, turnos]);
 
-  const defaultTurnoVigilante = vigilantes[0] || "";
+  const turnoVigilanteSuggestions = useMemo(() => {
+    const query = turnoForm.vigilante.trim().toLowerCase();
+
+    if (!query) {
+      return vigilantes.slice(0, 8);
+    }
+
+    return vigilantes
+      .filter((vigilante) => vigilante.toLowerCase().includes(query))
+      .slice(0, 8);
+  }, [turnoForm.vigilante, vigilantes]);
 
   const reportRows = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -635,9 +646,10 @@ export default function Admin() {
     setSelectedTurnoId("");
     setTurnoForm({
       ...baseTurnoForm,
-      vigilante: defaultTurnoVigilante,
+      vigilante: "",
       ...overrides,
     });
+    setTurnoVigilanteOpen(false);
   };
 
   const handleResetFilters = () => {
@@ -765,7 +777,7 @@ export default function Admin() {
 
     setSelectedTurnoId(turno.id);
     setTurnoForm({
-      vigilante: turno.vigilante || defaultTurnoVigilante,
+      vigilante: turno.vigilante || "",
       fecha: getTurnoStartDate(turno) || getTodayValue(),
       fecha_fin: getTurnoEndDate(turno) || getTurnoStartDate(turno) || getTodayValue(),
       hora_inicio: turno.hora_inicio || "07:00",
@@ -774,6 +786,7 @@ export default function Admin() {
       observaciones: turno.observaciones || "",
       status: turno.status || "programado",
     });
+    setTurnoVigilanteOpen(false);
     setIsTurnoModalOpen(true);
   };
 
@@ -781,10 +794,11 @@ export default function Admin() {
     setSelectedTurnoId("");
     setTurnoForm({
       ...baseTurnoForm,
-      vigilante: defaultTurnoVigilante,
+      vigilante: "",
       fecha,
       fecha_fin: fechaFin,
     });
+    setTurnoVigilanteOpen(false);
     setIsTurnoModalOpen(true);
   };
 
@@ -807,7 +821,7 @@ export default function Admin() {
     setSavingTurno(true);
 
     const payload = {
-      vigilante: (turnoForm.vigilante || defaultTurnoVigilante).trim(),
+      vigilante: turnoForm.vigilante.trim(),
       fecha: turnoForm.fecha,
       fecha_fin: turnoForm.fecha_fin || turnoForm.fecha,
       hora_inicio: turnoForm.hora_inicio,
@@ -873,7 +887,16 @@ export default function Admin() {
 
   const handleCancelTurnoEdit = () => {
     setIsTurnoModalOpen(false);
+    setTurnoVigilanteOpen(false);
     resetTurnoForm();
+  };
+
+  const handleSelectTurnoVigilante = (vigilante) => {
+    setTurnoForm((current) => ({
+      ...current,
+      vigilante,
+    }));
+    setTurnoVigilanteOpen(false);
   };
 
   const extractTurnoCalendarPayload = (event) => {
@@ -1378,16 +1401,14 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="turnos-summary-card">
-                <div className="turnos-summary-card__lead">
-                  <span className="turnos-summary-card__label">Edicion rapida</span>
-                  <p className="turnos-summary-card__title">
-                    Organiza turnos desde el calendario, sin perder contexto.
-                  </p>
-                  <p className="turnos-summary-card__text">
-                    Abre el modal para nuevos turnos y usa drag & drop o resize para mover
-                    directamente los bloques ya programados.
-                  </p>
+              <div className="turnos-summary-card turnos-summary-card--list">
+                <div className="section-head turnos-side__head">
+                  <div>
+                    <h3 className="section-title">Proximos turnos</h3>
+                    <p className="section-subtitle">
+                      Atajos para editar, completar o eliminar registros sin salir del panel.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="stats-grid stats-grid--compact admin-shift-stats">
@@ -1406,10 +1427,65 @@ export default function Admin() {
 
                 {turnosContext}
 
-                <div className="turnos-summary-card__hint">
-                  <strong>Atajo:</strong> haz clic en cualquier dia del calendario para abrir el modal
-                  con esa fecha precargada.
-                </div>
+                {!turnosLoading && upcomingTurnos.length > 0 ? (
+                  <div className="turnos-list">
+                    {upcomingTurnos.map((turno) => {
+                      const style = getShiftAccentStyle(turno.vigilante);
+
+                      return (
+                        <article key={turno.id} className="turnos-list__item" style={style}>
+                          <div className="turnos-list__head">
+                            <div>
+                              <strong>{turno.vigilante || "Sin asignar"}</strong>
+                              <p>
+                                {formatDateRangeLabel(
+                                  getTurnoStartDate(turno),
+                                  getTurnoEndDate(turno)
+                                )}
+                              </p>
+                            </div>
+                            <span className={`status-tag status-tag--mint`}>
+                              {turno.status || "programado"}
+                            </span>
+                          </div>
+
+                          <p className="turnos-list__meta">
+                            {getTurnoRange(turno)} - {turno.puesto || "Porteria principal"}
+                          </p>
+                          {turno.observaciones ? (
+                            <p className="turnos-list__notes">{turno.observaciones}</p>
+                          ) : null}
+
+                          <div className="shift-card__actions turnos-list__actions">
+                            <button
+                              type="button"
+                              className="button button--ghost"
+                              onClick={() => openTurnoForEdit(turno)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="button button--soft"
+                              onClick={() => handleToggleTurnoStatus(turno)}
+                            >
+                              {turno.status === "completado" ? "Reabrir" : "Completar"}
+                            </button>
+                            <button
+                              type="button"
+                              className="button button--soft"
+                              onClick={() => handleDeleteTurno(turno.id)}
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : turnosLoading ? null : (
+                  <div className="empty-state">Aun no hay turnos sincronizados.</div>
+                )}
               </div>
             </article>
 
@@ -1499,93 +1575,6 @@ export default function Admin() {
                   ]}
                   />
                 </div>
-
-              <div className="turnos-side">
-                <div className="section-head turnos-side__head">
-                  <div>
-                    <h3 className="section-title">Proximos turnos</h3>
-                    <p className="section-subtitle">
-                      Atajos para editar, completar o eliminar registros sin salir del panel.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="stats-grid stats-grid--compact admin-shift-stats">
-                  {turnoStats.map((stat, index) => (
-                    <article
-                      key={stat.label}
-                      className="stat-card fade-up"
-                      style={{ animationDelay: `${index * 0.06}s` }}
-                    >
-                      <span className="stat-card__label">{stat.label}</span>
-                      <p className="stat-card__value">{stat.value}</p>
-                      <p className="stat-card__note">{stat.note}</p>
-                    </article>
-                  ))}
-                </div>
-
-                {turnosContext}
-
-                {!turnosLoading && upcomingTurnos.length > 0 ? (
-                  <div className="turnos-list">
-                    {upcomingTurnos.map((turno) => {
-                      const style = getShiftAccentStyle(turno.vigilante);
-
-                      return (
-                        <article key={turno.id} className="turnos-list__item" style={style}>
-                          <div className="turnos-list__head">
-                            <div>
-                              <strong>{turno.vigilante || "Sin asignar"}</strong>
-                              <p>
-                                {formatDateRangeLabel(
-                                  getTurnoStartDate(turno),
-                                  getTurnoEndDate(turno)
-                                )}
-                              </p>
-                            </div>
-                            <span className={`status-tag status-tag--mint`}>
-                              {turno.status || "programado"}
-                            </span>
-                          </div>
-
-                          <p className="turnos-list__meta">
-                            {getTurnoRange(turno)} - {turno.puesto || "Porteria principal"}
-                          </p>
-                          {turno.observaciones ? (
-                            <p className="turnos-list__notes">{turno.observaciones}</p>
-                          ) : null}
-
-                          <div className="shift-card__actions turnos-list__actions">
-                            <button
-                              type="button"
-                              className="button button--ghost"
-                              onClick={() => openTurnoForEdit(turno)}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="button button--soft"
-                              onClick={() => handleToggleTurnoStatus(turno)}
-                            >
-                              {turno.status === "completado" ? "Reabrir" : "Completar"}
-                            </button>
-                            <button
-                              type="button"
-                              className="button button--soft"
-                              onClick={() => handleDeleteTurno(turno.id)}
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                ) : turnosLoading ? null : (
-                  <div className="empty-state">Aun no hay turnos sincronizados.</div>
-                )}
-              </div>
             </article>
           </section>
 
@@ -1633,21 +1622,59 @@ export default function Admin() {
                       <label className="field-label" htmlFor="turno-vigilante">
                         Vigilante
                       </label>
-                      <input
-                        id="turno-vigilante"
-                        name="vigilante"
-                        className="input"
-                        list="vigilantes-sugeridos"
-                        value={turnoForm.vigilante || defaultTurnoVigilante}
-                        onChange={handleTurnoChange}
-                        placeholder="Nombre del vigilante"
-                        required
-                      />
-                      <datalist id="vigilantes-sugeridos">
-                        {vigilantes.map((vigilante) => (
-                          <option key={vigilante} value={vigilante} />
-                        ))}
-                      </datalist>
+                      <div className="turno-vigilante-combobox">
+                        <input
+                          id="turno-vigilante"
+                          name="vigilante"
+                          className="input"
+                          value={turnoForm.vigilante}
+                          onChange={(event) => {
+                            handleTurnoChange(event);
+                            setTurnoVigilanteOpen(true);
+                          }}
+                          onFocus={() => setTurnoVigilanteOpen(true)}
+                          onBlur={() => {
+                            window.setTimeout(() => setTurnoVigilanteOpen(false), 120);
+                          }}
+                          autoComplete="off"
+                          aria-autocomplete="list"
+                          aria-expanded={turnoVigilanteOpen}
+                          aria-controls="turno-vigilante-suggestions"
+                          placeholder="Nombre del vigilante"
+                          required
+                        />
+
+                        {turnoVigilanteOpen && turnoVigilanteSuggestions.length > 0 ? (
+                          <div
+                            id="turno-vigilante-suggestions"
+                            className="turno-vigilante-combobox__menu"
+                            role="listbox"
+                            aria-label="Vigilantes guardados"
+                          >
+                            {turnoVigilanteSuggestions.map((vigilante) => (
+                              <button
+                                key={vigilante}
+                                type="button"
+                                className="turno-vigilante-combobox__option"
+                                onMouseDown={(event) => {
+                                  event.preventDefault();
+                                  handleSelectTurnoVigilante(vigilante);
+                                }}
+                                >
+                                {vigilante}
+                              </button>
+                            ))}
+                          </div>
+                        ) : turnoVigilanteOpen ? (
+                          <div
+                            id="turno-vigilante-suggestions"
+                            className="turno-vigilante-combobox__menu turno-vigilante-combobox__menu--empty"
+                            aria-live="polite"
+                          >
+                            No hay vigilantes guardados que coincidan.
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
 
                     <div className="field-group">
