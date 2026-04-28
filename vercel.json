@@ -5,6 +5,9 @@
   "functions": {
     "api/ingresos.js": {
       "maxDuration": 10
+    },
+    "api/turnos.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
